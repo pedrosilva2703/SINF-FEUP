@@ -98,11 +98,11 @@ int main(){
         printf("Voltage: %f V\n", voltage);
 
         sprintf(hxlight, "%s", strcat( strtok(NULL, " ") , strtok(NULL, " ")  ) );
-        light = ( 0.625 * 106 * ( (float)strtol(hxlight, &endPtr, 16) / 4096) * 1.5 ) / 100.000 * 1000;
+        light = ( 0.625 * 1000000 * ( (float)strtol(hxlight, &endPtr, 16) / 4096) * 1.5 ) / 100000 * 1000;
         printf("Light: %f lux\n", light);
 
         sprintf(hxcurrent, "%s", strcat( strtok(NULL, " ") , strtok(NULL, " ")  ) );
-        current = 0.769 * 105 * ( ( (float)strtol(hxcurrent, &endPtr, 16) / 4096) * 1.5 / 100.000 ) * 1000;
+        current = 0.769 * 100000 * ( ( (float)strtol(hxcurrent, &endPtr, 16) / 4096) * 1.5 / 100000 ) * 1000;
         printf("Current: %f A\n", current);
 
         sprintf(hxtemperature, "%s", strcat( strtok(NULL, " ") , strtok(NULL, " ")  ) );
