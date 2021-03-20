@@ -32,7 +32,7 @@ const char *channelRGBMatrix = "/tmp/ttyV10";
 const char *channelMSGCreator = "/tmp/ttyV12";
 
 char bytestream[MAX_MSG_SIZE];
-char MsgConf[150];
+char MsgConf[2][150]={""};
 
 char tempsensor_color_1[20];
 char humsensor_color_1[20];
@@ -109,9 +109,9 @@ void setup_sensors_actuators_colors(void){
 
 void negative_slope(int sensor_number, int moteid){
     int i, j, cnt1=0, cnt2=0;
-    for(i=0; i<strlen(MsgConf); i++){
-        if( MsgConf[i] == '[') cnt1++;
-        if( cnt1 == (2+1+sensor_number) && MsgConf[i] == ',' ) cnt2++;
+    for(i=0; i<strlen(MsgConf[moteid-1]); i++){
+        if( MsgConf[moteid-1][i] == '[') cnt1++;
+        if( cnt1 == (2+1+sensor_number) && MsgConf[moteid-1][i] == ',' ) cnt2++;
         if( cnt2 == 3 ){
             cnt1=0;
             cnt2=0;
@@ -119,18 +119,18 @@ void negative_slope(int sensor_number, int moteid){
         }
     }
     
-    for(j=strlen(MsgConf); j-1>i; j--){
-        MsgConf[j]=MsgConf[j-1];
+    for(j=strlen(MsgConf[moteid-1]); j-1>i; j--){
+        MsgConf[moteid-1][j]=MsgConf[moteid-1][j-1];
     }
-    MsgConf[j] = '-';
+    MsgConf[moteid-1][j] = '-';
     slope[moteid-1][sensor_number]=0;
 }
 
 void positive_slope(int sensor_number, int moteid){
     int i, j, cnt1=0, cnt2=0;
-    for(i=0; i<strlen(MsgConf); i++){
-        if( MsgConf[i] == '[') cnt1++;
-        if( cnt1 == (2+1+sensor_number) && MsgConf[i] == ',' ) cnt2++;
+    for(i=0; i<strlen(MsgConf[moteid-1]); i++){
+        if( MsgConf[moteid-1][i] == '[') cnt1++;
+        if( cnt1 == (2+1+sensor_number) && MsgConf[moteid-1][i] == ',' ) cnt2++;
         if( cnt2 == 3 ){
             cnt1=0;
             cnt2=0;
@@ -138,9 +138,8 @@ void positive_slope(int sensor_number, int moteid){
         }
     }
     
-    for(j=i+1; j<strlen(MsgConf); j++){
-        MsgConf[j]=MsgConf[j+1];
-        puts(MsgConf);
+    for(j=i+1; j<strlen(MsgConf[moteid-1]); j++){
+        MsgConf[moteid-1][j]=MsgConf[moteid-1][j+1];
     }  
     slope[moteid-1][sensor_number]=1;  
 }
@@ -163,13 +162,13 @@ int main(){
 
     //******************** Set up initial configuration of MsgCreatorConf.txt *******************************//
 
-    FILE *fp = fopen("MsgCreatorConf.txt","w");
-    fprintf(fp,"-n 1 -l 100 -f 10 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',1.0,10.0,1],['L',50,100,1]] -i 1");
-    fclose(fp);
+    FILE *fp1 = fopen("MsgCreatorConf.txt","w");
+    fprintf(fp1,"-n 1 -l 100 -f 2 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',1.0,10.0,1],['L',50,100,1]] -i 1");
+    fclose(fp1);
 
-    fp = fopen("MsgCreator2/MsgCreatorConf.txt","w");
-    fprintf(fp,"-n 1 -l 100 -f 10 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',1.0,10.0,1],['L',50,100,1]] -i 2");
-    fclose(fp);
+    FILE *fp2 = fopen("MsgCreator2/MsgCreatorConf.txt","w");
+    fprintf(fp2,"-n 1 -l 100 -f 2 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',15.0,30.0,1],['L',20,40,1]] -i 2");
+    fclose(fp2);
 
 
     sensor_data_channel = fopen(channelMSGCreator, "r");
@@ -243,7 +242,7 @@ int main(){
 		power = voltage * current;
 
 		//-------------------------------------------------------------- MOTE 1 ------------------------------//
-		
+
         if(moteid==1){
 
 		    if(temperature >= 4){
@@ -281,9 +280,9 @@ int main(){
         
 		//--------------------------------------- VERIFICAR REGRAS, ALTERAR MsgCreatorConf.txt E SENSORES/ATUADORES DA RGBMATRIX ----------------------------------//
 		
-            fp = fopen("MsgCreatorConf.txt","r");
-            fgets( MsgConf, 150 , fp);
-            fclose(fp);
+            fp1 = fopen("MsgCreatorConf.txt","r");
+            fgets( MsgConf[moteid-1], 150 , fp1);
+            fclose(fp1);
 
 		    if(temperature>=5 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
@@ -321,9 +320,9 @@ int main(){
 		
 
     
-            fp = fopen("MsgCreatorConf.txt", "w");
-            fprintf(fp,"%s",MsgConf);
-            fclose(fp);
+            fp1 = fopen("MsgCreatorConf.txt", "w");
+            fprintf(fp1,"%s",MsgConf[moteid-1]);
+            fclose(fp1);
 
         }
        
@@ -369,9 +368,9 @@ int main(){
         
 		//--------------------------------------- VERIFICAR REGRAS, ALTERAR MsgCreatorConf.txt E SENSORES/ATUADORES DA RGBMATRIX ----------------------------------//
 		
-            fp = fopen("MsgCreator2/MsgCreatorConf.txt","r");
-            fgets( MsgConf, 150 , fp);
-            fclose(fp);
+            fp2 = fopen("MsgCreator2/MsgCreatorConf.txt","r");
+            fgets( MsgConf[moteid-1], 150 , fp2);
+            fclose(fp2);
 
 		    if(temperature>=23 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
@@ -382,11 +381,11 @@ int main(){
                 strcpy(cooler_color_2,OFF);
             }
         
-		    if(humidity>=30 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+		    if(humidity>=31 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color_2,OFF);
 		    }
-            if(humidity<30 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+            if(humidity<29 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color_2,ON);
             }
@@ -406,16 +405,20 @@ int main(){
 		    if(power < 160){
 			    strcpy(powersaver_color_2,OFF);
 		    }	
-		
-
       
-            fp = fopen("MsgCreator2/MsgCreatorConf.txt", "w");
-            fprintf(fp,"%s",MsgConf);
-            fclose(fp);
+            fp2 = fopen("MsgCreator2/MsgCreatorConf.txt", "w");
+            fprintf(fp2,"%s",MsgConf[moteid-1]);
+            fclose(fp2);
 
         }
 		
-		
+        printf("%s\n", MsgConf[moteid-1]);
+        //strcpy(MsgConf,"");
+		for(int i=0; i<strlen(MsgConf[moteid-1]); i++){
+            MsgConf[moteid-1][i]=0;
+        }
+        printf("Vazia %s\n", MsgConf[moteid-1]);
+
 		//--------------------------------- ATUALIZAR RGBMATRIX -------------------------------------//
 
         matrix_channel=fopen(channelRGBMatrix,"w");
