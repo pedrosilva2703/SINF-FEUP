@@ -334,7 +334,7 @@ int main(){
 		
         if(moteid==2){
             printf("ESTAMOS NA 2\n");
-		    if(temperature >= 4){
+		    if(temperature >= 20){
 			    strcpy(tempsensor_color_2,HIGHTEMP);
 		    }
 			
@@ -349,7 +349,7 @@ int main(){
                 strcpy(humsensor_color_2,LOWHUM);
 		    }
 		
-		    if(light <= 1500){
+		    if(light <= 1200){
 			    strcpy(lightsensor_color_2,LOWLIGHT);
 		    }
 		
@@ -357,7 +357,7 @@ int main(){
 			    strcpy(lightsensor_color_2,BRIGHT);
 		    }
 		
-		    if(power >= 125){
+		    if(power >= 160){
 			    strcpy(powersensor_color_2,HIGHPOWER);
 		    }
 		
@@ -373,37 +373,37 @@ int main(){
             fgets( MsgConf, 150 , fp);
             fclose(fp);
 
-		    if(temperature>=5 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+		    if(temperature>=18 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color_2,ON);
 		    }
-            if(temperature<=3 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+            if(temperature<=23 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color_2,OFF);
             }
         
-		    if(humidity>=90 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+		    if(humidity>=30 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color_2,OFF);
 		    }
-            if(humidity<=70 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+            if(humidity<=30 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color_2,ON);
             }
         
-            if(light <= 1500){
+            if(light <= 1200){
 			    strcpy(illumination_color_2,LIGHTON);
 		    }
 		
-		    if(light > 1500){
+		    if(light > 1200){
 			    strcpy(illumination_color_2,LIGHTOFF);
 		    }
 		
-		    if(power >= 125){
+		    if(power >= 160){
 			    strcpy(powersaver_color_2,ON);
 		    }
 		
-		    if(power < 125){
+		    if(power < 160){
 			    strcpy(powersaver_color_2,OFF);
 		    }	
 		
