@@ -1,0 +1,25 @@
+Mote 1	(Refrigerator)
+
+tempsensor		humsensor		lightsensor		powersensor
+if >   4 Red		if >  80 DarkBlue	if >  1500 White	if >  125 Red
+if <=  4 Blue    	if <= 80 LightBlue	if <= 1500 Black	if <= 125 Orange
+
+cooler			humidifier		illumination		powersaver
+if >=  5 Green		if >=  90 Red		if >  1500  Gray	if >=  125 Green
+if <=  3 Red    	if <=  70 Green		if <=  1500 Yellow	if <   125 Red
+
+
+
+Mote 2	(Room where pizza are stored)
+
+tempsensor		humsensor		lightsensor		powersensor
+if >   20 Red		if >  80 DarkBlue	if >  1200 White	if >  160 Red
+if <=  20 Blue    	if <= 80 LightBlue	if <= 1200 Black	if <= 160 Orange
+
+cooler			humidifier		illumination		powersaver
+if >=  23 Green		if >=  30 Red		if >   1200  Gray	if >=  160 Green
+if <=  18 Red    	if <  30 Green		if <=  1200 Yellow	if <   160 Red
+
+
+
+

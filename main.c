@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NUMBER_OF_MOTES 2
+
 #define MAX_MSG_SIZE 75
 
 #define VOLTAGE_SENSOR_ID 0
@@ -27,59 +29,60 @@
 #define HIGHPOWER "[255,0,0]"
 
 
-#define REFRIGERATOR_ON "[0,150,255]"
-
 
 const char *channelRGBMatrix = "/tmp/ttyV10";
 const char *channelMSGCreator = "/tmp/ttyV12";
 
 char bytestream[MAX_MSG_SIZE];
-char MsgConf[150];
+char MsgConf[NUMBER_OF_MOTES][150]={""};
 
-char tempsensor_color[20];
-char humsensor_color[20];
-char lightsensor_color[20];
-char powersensor_color[20];
+char tempsensor_color[NUMBER_OF_MOTES][20];
+char humsensor_color[NUMBER_OF_MOTES][20];
+char lightsensor_color[NUMBER_OF_MOTES][20];
+char powersensor_color[NUMBER_OF_MOTES][20];
 
-char refrigerator_color[20];
-char humidifier_color[20];
-char illumination_color[20];
-char powersaver_color[20];
-
-
+char cooler_color[NUMBER_OF_MOTES][20];
+char humidifier_color[NUMBER_OF_MOTES][20];
+char illumination_color[NUMBER_OF_MOTES][20];
+char powersaver_color[NUMBER_OF_MOTES][20];
 
 
-
-int slope[5] = {1,1,1,1,1};     //variable slope=1 <=> slope>0  and slope=0 <=> slope<0
-
+int slope[NUMBER_OF_MOTES][5] = {1,1,1,1,1,  1,1,1,1,1};     //variable slope=1 <=> slope>0  and slope=0 <=> slope<0
 
 FILE *sensor_data_channel;
 FILE *matrix_channel;
 
-void negative_slope(int sensor_number){
-    int i, j, cnt1=0, cnt2=0;
-    for(i=0; i<strlen(MsgConf); i++){
-        if( MsgConf[i] == '[') cnt1++;
-        if( cnt1 == (2+1+sensor_number) && MsgConf[i] == ',' ) cnt2++;
-        if( cnt2 == 3 ){
-            cnt1=0;
-            cnt2=0;
-            break;
-        }
-    }
+
+void setup_sensors_actuators_colors(void){
     
-    for(j=strlen(MsgConf); j-1>i; j--){
-        MsgConf[j]=MsgConf[j-1];
+    for(int i=0; i<2; i++){
+        strcpy(tempsensor_color[i],"");
+	    strcpy(humsensor_color[i],"");
+	    strcpy(lightsensor_color[i],"");
+	    strcpy(powersensor_color[i],"");
+	
+	    strcpy(cooler_color[i],"");
+	    strcpy(humidifier_color[i],"");
+	    strcpy(illumination_color[i],"");
+	    strcpy(powersaver_color[i],"");
+	
+	    strcpy(tempsensor_color[i],LOWTEMP);
+	    strcpy(humsensor_color[i],LOWHUM);
+	    strcpy(lightsensor_color[i],LOWLIGHT);
+	    strcpy(powersensor_color[i],LOWPOWER);
+	
+	    strcpy(cooler_color[i],OFF);
+	    strcpy(humidifier_color[i],OFF);
+	    strcpy(illumination_color[i],LIGHTOFF);
+	    strcpy(powersaver_color[i],OFF);
     }
-    MsgConf[j] = '-';
-    slope[sensor_number]=0;
 }
 
-void positive_slope(int sensor_number){
+void negative_slope(int sensor_number, int moteid){
     int i, j, cnt1=0, cnt2=0;
-    for(i=0; i<strlen(MsgConf); i++){
-        if( MsgConf[i] == '[') cnt1++;
-        if( cnt1 == (2+1+sensor_number) && MsgConf[i] == ',' ) cnt2++;
+    for(i=0; i<strlen(MsgConf[moteid-1]); i++){
+        if( MsgConf[moteid-1][i] == '[') cnt1++;
+        if( cnt1 == (2+1+sensor_number) && MsgConf[moteid-1][i] == ',' ) cnt2++;
         if( cnt2 == 3 ){
             cnt1=0;
             cnt2=0;
@@ -87,87 +90,104 @@ void positive_slope(int sensor_number){
         }
     }
     
-    for(j=i+1; j<strlen(MsgConf); j++){
-        MsgConf[j]=MsgConf[j+1];
-        puts(MsgConf);
+    for(j=strlen(MsgConf[moteid-1]); j-1>i; j--){
+        MsgConf[moteid-1][j]=MsgConf[moteid-1][j-1];
+    }
+    MsgConf[moteid-1][j] = '-';
+    slope[moteid-1][sensor_number]=0;
+}
+
+void positive_slope(int sensor_number, int moteid){
+    int i, j, cnt1=0, cnt2=0;
+    for(i=0; i<strlen(MsgConf[moteid-1]); i++){
+        if( MsgConf[moteid-1][i] == '[') cnt1++;
+        if( cnt1 == (2+1+sensor_number) && MsgConf[moteid-1][i] == ',' ) cnt2++;
+        if( cnt2 == 3 ){
+            cnt1=0;
+            cnt2=0;
+            break;
+        }
+    }
+    
+    for(j=i+1; j<strlen(MsgConf[moteid-1]); j++){
+        MsgConf[moteid-1][j]=MsgConf[moteid-1][j+1];
     }  
-    slope[sensor_number]=1;  
+    slope[moteid-1][sensor_number]=1;  
 }
 
 int main(){
    
-
+    char hxmoteid[4];
     char hxvoltage[4];
     char hxlight[4];
     char hxcurrent[4];
     char hxtemperature[4];
     char hxhumidity[4];
 
+
     char* endPtr;
 
-
+    int moteid;
     double voltage, light, current, temperature, humidity, power;
-    
-    strcpy(tempsensor_color,"");
-	strcpy(humsensor_color,"");
-	strcpy(lightsensor_color,"");
-	strcpy(powersensor_color,"");
-	
-	strcpy(refrigerator_color,"");
-	strcpy(humidifier_color,"");
-	strcpy(illumination_color,"");
-	strcpy(powersaver_color,"");
-	
-	
-	strcpy(tempsensor_color,LOWTEMP);
-	strcpy(humsensor_color,LOWHUM);
-	strcpy(lightsensor_color,LOWLIGHT);
-	strcpy(powersensor_color,LOWPOWER);
-	
-	strcpy(refrigerator_color,OFF);
-	strcpy(humidifier_color,OFF);
-	strcpy(illumination_color,LIGHTOFF);
-	strcpy(powersaver_color,OFF);
+
 
     //******************** Set up initial configuration of MsgCreatorConf.txt *******************************//
 
-    FILE *fp = fopen("MsgCreatorConf.txt","w");
-    fprintf(fp,"-n 5 -l 100 -f 10 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',1.0,10.0,1],['L',50,100,1]] -i 1");
-    fclose(fp);
+    FILE *fp1 = fopen("MsgCreatorConf.txt","w");
+    fprintf(fp1,"-n 1 -l 100 -f 2 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',10.0,20.0,1],['L',50,100,1]] -i 1");
+    fclose(fp1);
+
+    FILE *fp2 = fopen("MsgCreator2/MsgCreatorConf.txt","w");
+    fprintf(fp2,"-n 1 -l 100 -f 2 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',15.0,30.0,1],['L',20,40,1]] -i 2");
+    fclose(fp2);
+
 
     sensor_data_channel = fopen(channelMSGCreator, "r");
-
     
+    
+    setup_sensors_actuators_colors();
     
     matrix_channel=fopen(channelRGBMatrix,"w");
     
-    fprintf(matrix_channel,"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
-                            "["WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,  					WALL,      WALL,\
-                               WALL,        FLOOR,      FLOOR,      			FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,\
-                               WALL,        FLOOR,      tempsensor_color,       FLOOR,      FLOOR,      refrigerator_color, 	FLOOR,     WALL,\
-                               WALL,        FLOOR,      humsensor_color,      	FLOOR,      FLOOR,      humidifier_color, 		FLOOR,     WALL,\
-                               WALL,        FLOOR,      lightsensor_color,      FLOOR,      FLOOR,      illumination_color, 	FLOOR,     WALL,\
-                               WALL,        FLOOR,      powersensor_color,    	FLOOR,      FLOOR,      powersaver_color, 		FLOOR,     WALL,\
-                               WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,\
-                               WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL"]\n");
-                            
-    fclose(matrix_channel);
+	fprintf(matrix_channel,"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+                        "["WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,  					WALL,      WALL,	WALL,    WALL, 	                  WALL,     WALL,      WALL,                    WALL,  	WALL,\
+                           WALL,        FLOOR,      FLOOR,      			FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,    FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      tempsensor_color[0],    FLOOR,      FLOOR,      cooler_color[0], 	    FLOOR,     WALL,	FLOOR,   tempsensor_color[1],     FLOOR,    FLOOR,     cooler_color[1],         FLOOR, 	WALL,\
+                           WALL,        FLOOR,      humsensor_color[0],     FLOOR,      FLOOR,      humidifier_color[0], 	FLOOR,     WALL,	FLOOR,   humsensor_color[1],      FLOOR,    FLOOR,     humidifier_color[1],     FLOOR, 	WALL,\
+                           WALL,        FLOOR,      lightsensor_color[0],   FLOOR,      FLOOR,      illumination_color[0], 	FLOOR,     WALL,	FLOOR,   lightsensor_color[1],    FLOOR,    FLOOR,     illumination_color[1],   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      powersensor_color[0],   FLOOR,      FLOOR,      powersaver_color[0], 	FLOOR,     WALL,	FLOOR,   powersensor_color[1],    FLOOR,    FLOOR,     powersaver_color[1],     FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL,	WALL,    WALL,                    WALL,     WALL,      WALL,                    WALL, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL,	WALL,    WALL,                    WALL,     WALL,      WALL,                    WALL, 	WALL"]\n");
+                        
+	fclose(matrix_channel);
 
     
     
     while(1){
         
-        //****************** LER BYTE STREAM *****************//
+        //------------------------------------- LER BYTE STREAM -------------------------//
 
         fgets(bytestream, MAX_MSG_SIZE, sensor_data_channel);
         puts(bytestream);
 
-        for(int i=0; i<10; i++){
+        for(int i=0; i<9; i++){
            if(i==0) strtok(bytestream, " ");
+           else if(i==5) sprintf(hxmoteid, "%s", strcat( strtok(NULL, " ") , strtok(NULL, " ")  ) );
            else strtok(NULL, " "); 
         }
 
-        //****************** CONVERTER DADOS DA BYTESTREAM *****************//
+        //---------------------------------- CONVERTER DADOS DA BYTESTREAM -------------------------//
+        
+        
+        moteid = (int)strtol(hxmoteid, &endPtr, 16);
+        printf("MoteID: %d\n", moteid);
 
         sprintf(hxvoltage, "%s", strcat( strtok(NULL, " ") , strtok(NULL, " ")  ) );
         voltage = 2*1.5* (float)strtol(hxvoltage, &endPtr, 16) / 4096;
@@ -190,113 +210,205 @@ int main(){
         printf("Relative humidity: %f %%\n", humidity);
       
 		power = voltage * current;
-		
-		//****************** ATUALIZAR GRÁFICAMENTE OS SENSORES NA MATRIZ *****************//
-		
-		if(temperature >= 4){
-			strcpy(tempsensor_color,HIGHTEMP);
-			}
+
+		//-------------------------------------------------------------- MOTE 1 ------------------------------//
+
+        if(moteid==1){
+
+		    if(temperature >= 5){
+			    strcpy(tempsensor_color[0],HIGHTEMP);
+		    }
 			
-		else{
-			strcpy(tempsensor_color,LOWTEMP);
-			}
+		    else{
+			    strcpy(tempsensor_color[0],LOWTEMP);
+		    }
 		
-		if(humidity >= 80){
-			strcpy(humsensor_color,HIGHHUM);
-			}
-		else
-		{strcpy(humsensor_color,LOWHUM);
-			}
+		    if(humidity >= 80){
+			    strcpy(humsensor_color[0],HIGHHUM);
+			    }
+		    else{
+                strcpy(humsensor_color[0],LOWHUM);
+		    }
 		
-		if(light <= 1500){
-			strcpy(lightsensor_color,LOWLIGHT);
-		}
+		    if(light <= 1500){
+			    strcpy(lightsensor_color[0],LOWLIGHT);
+		    }
 		
-		else{
-			strcpy(lightsensor_color,BRIGHT);
-		}
+		    else{
+			    strcpy(lightsensor_color[0],BRIGHT);
+		    }
 		
-		if(power >= 125){
-			strcpy(powersensor_color,HIGHPOWER);
-		}
+		    if(power >= 125){
+			    strcpy(powersensor_color[0],HIGHPOWER);
+		    }
 		
-		else{
-			strcpy(powersensor_color,LOWPOWER);
-		}
+		    else{
+			    strcpy(powersensor_color[0],LOWPOWER);
+		    }
 		
 		
         
-		//****************** VERIFICAR REGRAS E ALTERAR MsgCreatorConf.txt *****************//
+		//--------------------------------------- VERIFICAR REGRAS, ALTERAR MsgCreatorConf.txt E SENSORES/ATUADORES DA RGBMATRIX ----------------------------------//
 		
-        fp = fopen("MsgCreatorConf.txt","r");
-        fgets( MsgConf, 150 , fp);
-        fclose(fp);
+            fp1 = fopen("MsgCreatorConf.txt","r");
+            fgets( MsgConf[moteid-1], 150 , fp1);
+            fclose(fp1);
 
-		if(temperature>=5 && slope[TEMPERATURE_SENSOR_ID]==1 ){
-            negative_slope(TEMPERATURE_SENSOR_ID);
-            strcpy(refrigerator_color,ON);
-		}
-        if(temperature<=3 && slope[TEMPERATURE_SENSOR_ID]==0){
-            positive_slope(TEMPERATURE_SENSOR_ID);
-            strcpy(refrigerator_color,OFF);
+		    if(temperature>2.5 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+                negative_slope(TEMPERATURE_SENSOR_ID, moteid);
+                strcpy(cooler_color[0],ON);
+		    }
+            if(temperature<2 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+                positive_slope(TEMPERATURE_SENSOR_ID, moteid);
+                strcpy(cooler_color[0],OFF);
+            }
+        
+		    if(humidity>=90 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+                negative_slope(HUMIDITY_SENSOR_ID, moteid);
+                strcpy(humidifier_color[0],OFF);
+		    }
+            if(humidity<=70 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+                positive_slope(HUMIDITY_SENSOR_ID, moteid);
+                strcpy(humidifier_color[0],ON);
+            }
+        
+            if(light <= 1500){
+			    strcpy(illumination_color[0],LIGHTON);
+		    }
+		
+		    if(light > 1500){
+			    strcpy(illumination_color[0],LIGHTOFF);
+		    }
+		
+		    if(power >= 125){
+			    strcpy(powersaver_color[0],ON);
+		    }
+		
+		    if(power < 125){
+			    strcpy(powersaver_color[0],OFF);
+		    }	
+		
+
+    
+            fp1 = fopen("MsgCreatorConf.txt", "w");
+            fprintf(fp1,"%s",MsgConf[moteid-1]);
+            fclose(fp1);
+
         }
+       
+
+
+        //-----------------------------------------------------------------------------------------------------------------------------------//
+		//-------------------------------------------------------------- MOTE 2 ------------------------------------------------------------//
+		
+        if(moteid==2){
+           
+		    if(temperature >= 20){
+			    strcpy(tempsensor_color[1],HIGHTEMP);
+		    }
+			
+		    else{
+			    strcpy(tempsensor_color[1],LOWTEMP);
+		    }
+		
+		    if(humidity >= 80){
+			    strcpy(humsensor_color[1],HIGHHUM);
+			    }
+		    else{
+                strcpy(humsensor_color[1],LOWHUM);
+		    }
+		
+		    if(light <= 1200){
+			    strcpy(lightsensor_color[1],LOWLIGHT);
+		    }
+		
+		    else{
+			    strcpy(lightsensor_color[1],BRIGHT);
+		    }
+		
+		    if(power >= 160){
+			    strcpy(powersensor_color[1],HIGHPOWER);
+		    }
+		
+		    else{
+			    strcpy(powersensor_color[1],LOWPOWER);
+		    }
+		
+		
         
-		if(humidity>=90 && slope[HUMIDITY_SENSOR_ID]==1 ){
-            negative_slope(HUMIDITY_SENSOR_ID);
-            strcpy(humidifier_color,OFF);
-		}
-        if(humidity<=70 && slope[HUMIDITY_SENSOR_ID]==0){
-            positive_slope(HUMIDITY_SENSOR_ID);
-            strcpy(humidifier_color,ON);
+		//--------------------------------------- VERIFICAR REGRAS, ALTERAR MsgCreatorConf.txt E SENSORES/ATUADORES DA RGBMATRIX ----------------------------------//
+		
+            fp2 = fopen("MsgCreator2/MsgCreatorConf.txt","r");
+            fgets( MsgConf[moteid-1], 150 , fp2);
+            fclose(fp2);
+
+		    if(temperature>=23 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+                negative_slope(TEMPERATURE_SENSOR_ID, moteid);
+                strcpy(cooler_color[1],ON);
+		    }
+            if(temperature<=18 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+                positive_slope(TEMPERATURE_SENSOR_ID, moteid);
+                strcpy(cooler_color[1],OFF);
+            }
+        
+		    if(humidity>=31 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+                negative_slope(HUMIDITY_SENSOR_ID, moteid);
+                strcpy(humidifier_color[1],OFF);
+		    }
+            if(humidity<29 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+                positive_slope(HUMIDITY_SENSOR_ID, moteid);
+                strcpy(humidifier_color[1],ON);
+            }
+        
+            if(light <= 1200){
+			    strcpy(illumination_color[1],LIGHTON);
+		    }
+		
+		    if(light > 1200){
+			    strcpy(illumination_color[1],LIGHTOFF);
+		    }
+		
+		    if(power >= 160){
+			    strcpy(powersaver_color[1],ON);
+		    }
+		
+		    if(power < 160){
+			    strcpy(powersaver_color[1],OFF);
+		    }	
+      
+            fp2 = fopen("MsgCreator2/MsgCreatorConf.txt", "w");
+            fprintf(fp2,"%s",MsgConf[moteid-1]);
+            fclose(fp2);
+
         }
-        
-        if(light <= 1500){
-			strcpy(illumination_color,LIGHTON);
-		}
-		
-		if(light > 1500){
-			strcpy(illumination_color,LIGHTOFF);
-		}
-		
-		if(power >= 125){
-			strcpy(powersaver_color,ON);
-		}
-		
-		if(power < 125){
-			strcpy(powersaver_color,OFF);
-		}
-		
-		
-			
-			
 		
 
-        puts(MsgConf);
-        fp = fopen("MsgCreatorConf.txt", "w");
-        fprintf(fp,"%s",MsgConf);
-        fclose(fp);
-		
-		
-		
-		
-		matrix_channel=fopen(channelRGBMatrix,"w");
-		
-		fprintf(matrix_channel,"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
-                            "["WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,  					WALL,      WALL,\
-                               WALL,        FLOOR,      FLOOR,      			FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,\
-                               WALL,        FLOOR,      tempsensor_color,       FLOOR,      FLOOR,      refrigerator_color, 	FLOOR,     WALL,\
-                               WALL,        FLOOR,      humsensor_color,      	FLOOR,      FLOOR,      humidifier_color, 		FLOOR,     WALL,\
-                               WALL,        FLOOR,      lightsensor_color,      FLOOR,      FLOOR,      illumination_color, 	FLOOR,     WALL,\
-                               WALL,        FLOOR,      powersensor_color,    	FLOOR,      FLOOR,      powersaver_color, 		FLOOR,     WALL,\
-                               WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,\
-                               WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL"]\n");
-                            
-		fclose(matrix_channel);
+        strcpy(MsgConf[moteid-1],"");
 
+		//--------------------------------- ATUALIZAR RGBMATRIX -------------------------------------//
+
+        matrix_channel=fopen(channelRGBMatrix,"w");
+    
+	    fprintf(matrix_channel,"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+                        "["WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,  					WALL,      WALL,	WALL,    WALL, 	                  WALL,     WALL,      WALL,                    WALL,  	WALL,\
+                           WALL,        FLOOR,      FLOOR,      			FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,    FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      tempsensor_color[0],    FLOOR,      FLOOR,      cooler_color[0], 	    FLOOR,     WALL,	FLOOR,   tempsensor_color[1],     FLOOR,    FLOOR,     cooler_color[1],          FLOOR, 	WALL,\
+                           WALL,        FLOOR,      humsensor_color[0],     FLOOR,      FLOOR,      humidifier_color[0], 	FLOOR,     WALL,	FLOOR,   humsensor_color[1],      FLOOR,    FLOOR,     humidifier_color[1],      FLOOR, 	WALL,\
+                           WALL,        FLOOR,      lightsensor_color[0],   FLOOR,      FLOOR,      illumination_color[0], 	FLOOR,     WALL,	FLOOR,   lightsensor_color[1],    FLOOR,    FLOOR,     illumination_color[1],    FLOOR, 	WALL,\
+                           WALL,        FLOOR,      powersensor_color[0],   FLOOR,      FLOOR,      powersaver_color[0], 	FLOOR,     WALL,	FLOOR,   powersensor_color[1],    FLOOR,    FLOOR,     powersaver_color[1],      FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL,	WALL,    WALL,                    WALL,     WALL,      WALL,                    WALL, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
+                           WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL,	WALL,    WALL,                    WALL,     WALL,      WALL,                    WALL, 	WALL"]\n");
+                        
+	    fclose(matrix_channel);
 	
-
-        
-		
+	
 		
     }
 }
