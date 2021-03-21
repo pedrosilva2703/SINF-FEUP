@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NUMBER_OF_MOTES 2
+
 #define MAX_MSG_SIZE 75
 
 #define VOLTAGE_SENSOR_ID 0
@@ -32,79 +34,48 @@ const char *channelRGBMatrix = "/tmp/ttyV10";
 const char *channelMSGCreator = "/tmp/ttyV12";
 
 char bytestream[MAX_MSG_SIZE];
-char MsgConf[2][150]={""};
+char MsgConf[NUMBER_OF_MOTES][150]={""};
 
-char tempsensor_color_1[20];
-char humsensor_color_1[20];
-char lightsensor_color_1[20];
-char powersensor_color_1[20];
-char tempsensor_color_2[20];
-char humsensor_color_2[20];
-char lightsensor_color_2[20];
-char powersensor_color_2[20];
+char tempsensor_color[NUMBER_OF_MOTES][20];
+char humsensor_color[NUMBER_OF_MOTES][20];
+char lightsensor_color[NUMBER_OF_MOTES][20];
+char powersensor_color[NUMBER_OF_MOTES][20];
 
-char cooler_color_1[20];
-char humidifier_color_1[20];
-char illumination_color_1[20];
-char powersaver_color_1[20];
-char cooler_color_2[20];
-char humidifier_color_2[20];
-char illumination_color_2[20];
-char powersaver_color_2[20];
+char cooler_color[NUMBER_OF_MOTES][20];
+char humidifier_color[NUMBER_OF_MOTES][20];
+char illumination_color[NUMBER_OF_MOTES][20];
+char powersaver_color[NUMBER_OF_MOTES][20];
 
 
-
-
-
-int slope[2][5] = {1,1,1,1,1,  1,1,1,1,1};     //variable slope=1 <=> slope>0  and slope=0 <=> slope<0
+int slope[NUMBER_OF_MOTES][5] = {1,1,1,1,1,  1,1,1,1,1};     //variable slope=1 <=> slope>0  and slope=0 <=> slope<0
 
 FILE *sensor_data_channel;
 FILE *matrix_channel;
 
 
 void setup_sensors_actuators_colors(void){
-    //Mote ID 1
-    strcpy(tempsensor_color_1,"");
-	strcpy(humsensor_color_1,"");
-	strcpy(lightsensor_color_1,"");
-	strcpy(powersensor_color_1,"");
+    
+    for(int i=0; i<2; i++){
+        strcpy(tempsensor_color[i],"");
+	    strcpy(humsensor_color[i],"");
+	    strcpy(lightsensor_color[i],"");
+	    strcpy(powersensor_color[i],"");
 	
-	strcpy(cooler_color_1,"");
-	strcpy(humidifier_color_1,"");
-	strcpy(illumination_color_1,"");
-	strcpy(powersaver_color_1,"");
+	    strcpy(cooler_color[i],"");
+	    strcpy(humidifier_color[i],"");
+	    strcpy(illumination_color[i],"");
+	    strcpy(powersaver_color[i],"");
 	
-	strcpy(tempsensor_color_1,LOWTEMP);
-	strcpy(humsensor_color_1,LOWHUM);
-	strcpy(lightsensor_color_1,LOWLIGHT);
-	strcpy(powersensor_color_1,LOWPOWER);
+	    strcpy(tempsensor_color[i],LOWTEMP);
+	    strcpy(humsensor_color[i],LOWHUM);
+	    strcpy(lightsensor_color[i],LOWLIGHT);
+	    strcpy(powersensor_color[i],LOWPOWER);
 	
-	strcpy(cooler_color_1,OFF);
-	strcpy(humidifier_color_1,OFF);
-	strcpy(illumination_color_1,LIGHTOFF);
-	strcpy(powersaver_color_1,OFF);
-
-    //Mote ID 2
-    strcpy(tempsensor_color_2,"");
-	strcpy(humsensor_color_2,"");
-	strcpy(lightsensor_color_2,"");
-	strcpy(powersensor_color_2,"");
-	
-	strcpy(cooler_color_2,"");
-	strcpy(humidifier_color_2,"");
-	strcpy(illumination_color_2,"");
-	strcpy(powersaver_color_2,"");
-	
-	strcpy(tempsensor_color_2,LOWTEMP);
-	strcpy(humsensor_color_2,LOWHUM);
-	strcpy(lightsensor_color_2,LOWLIGHT);
-	strcpy(powersensor_color_2,LOWPOWER);
-	
-	strcpy(cooler_color_2,OFF);
-	strcpy(humidifier_color_2,OFF);
-	strcpy(illumination_color_2,LIGHTOFF);
-	strcpy(powersaver_color_2,OFF);
-
+	    strcpy(cooler_color[i],OFF);
+	    strcpy(humidifier_color[i],OFF);
+	    strcpy(illumination_color[i],LIGHTOFF);
+	    strcpy(powersaver_color[i],OFF);
+    }
 }
 
 void negative_slope(int sensor_number, int moteid){
@@ -163,7 +134,7 @@ int main(){
     //******************** Set up initial configuration of MsgCreatorConf.txt *******************************//
 
     FILE *fp1 = fopen("MsgCreatorConf.txt","w");
-    fprintf(fp1,"-n 1 -l 100 -f 2 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',1.0,10.0,1],['L',50,100,1]] -i 1");
+    fprintf(fp1,"-n 1 -l 100 -f 2 -c 1 -s [0,1,2,3,4] -d [['S',5,0.1,100],['C',500,2500,50],['C',0,50,1],['L',10.0,20.0,1],['L',50,100,1]] -i 1");
     fclose(fp1);
 
     FILE *fp2 = fopen("MsgCreator2/MsgCreatorConf.txt","w");
@@ -181,10 +152,10 @@ int main(){
 	fprintf(matrix_channel,"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
                         "["WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,  					WALL,      WALL,	WALL,    WALL, 	                  WALL,     WALL,      WALL,                    WALL,  	WALL,\
                            WALL,        FLOOR,      FLOOR,      			FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,    FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
-                           WALL,        FLOOR,      tempsensor_color_1,     FLOOR,      FLOOR,      cooler_color_1, 	    FLOOR,     WALL,	FLOOR,   tempsensor_color_2,      FLOOR,    FLOOR,     cooler_color_2,          FLOOR, 	WALL,\
-                           WALL,        FLOOR,      humsensor_color_1,      FLOOR,      FLOOR,      humidifier_color_1, 	FLOOR,     WALL,	FLOOR,   humsensor_color_2,       FLOOR,    FLOOR,     humidifier_color_2,      FLOOR, 	WALL,\
-                           WALL,        FLOOR,      lightsensor_color_1,    FLOOR,      FLOOR,      illumination_color_1, 	FLOOR,     WALL,	FLOOR,   lightsensor_color_2,     FLOOR,    FLOOR,     illumination_color_2,    FLOOR, 	WALL,\
-                           WALL,        FLOOR,      powersensor_color_1,    FLOOR,      FLOOR,      powersaver_color_1, 	FLOOR,     WALL,	FLOOR,   powersensor_color_2,     FLOOR,    FLOOR,     powersaver_color_2,      FLOOR, 	WALL,\
+                           WALL,        FLOOR,      tempsensor_color[0],    FLOOR,      FLOOR,      cooler_color[0], 	    FLOOR,     WALL,	FLOOR,   tempsensor_color[1],     FLOOR,    FLOOR,     cooler_color[1],         FLOOR, 	WALL,\
+                           WALL,        FLOOR,      humsensor_color[0],     FLOOR,      FLOOR,      humidifier_color[0], 	FLOOR,     WALL,	FLOOR,   humsensor_color[1],      FLOOR,    FLOOR,     humidifier_color[1],     FLOOR, 	WALL,\
+                           WALL,        FLOOR,      lightsensor_color[0],   FLOOR,      FLOOR,      illumination_color[0], 	FLOOR,     WALL,	FLOOR,   lightsensor_color[1],    FLOOR,    FLOOR,     illumination_color[1],   FLOOR, 	WALL,\
+                           WALL,        FLOOR,      powersensor_color[0],   FLOOR,      FLOOR,      powersaver_color[0], 	FLOOR,     WALL,	FLOOR,   powersensor_color[1],    FLOOR,    FLOOR,     powersaver_color[1],     FLOOR, 	WALL,\
                            WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
                            WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL,	WALL,    WALL,                    WALL,     WALL,      WALL,                    WALL, 	WALL,\
                            WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
@@ -211,7 +182,6 @@ int main(){
            else if(i==5) sprintf(hxmoteid, "%s", strcat( strtok(NULL, " ") , strtok(NULL, " ")  ) );
            else strtok(NULL, " "); 
         }
-        //printf("%s\n", hxmoteid);
 
         //---------------------------------- CONVERTER DADOS DA BYTESTREAM -------------------------//
         
@@ -245,35 +215,35 @@ int main(){
 
         if(moteid==1){
 
-		    if(temperature >= 4){
-			    strcpy(tempsensor_color_1,HIGHTEMP);
+		    if(temperature >= 5){
+			    strcpy(tempsensor_color[0],HIGHTEMP);
 		    }
 			
 		    else{
-			    strcpy(tempsensor_color_1,LOWTEMP);
+			    strcpy(tempsensor_color[0],LOWTEMP);
 		    }
 		
 		    if(humidity >= 80){
-			    strcpy(humsensor_color_1,HIGHHUM);
+			    strcpy(humsensor_color[0],HIGHHUM);
 			    }
 		    else{
-                strcpy(humsensor_color_1,LOWHUM);
+                strcpy(humsensor_color[0],LOWHUM);
 		    }
 		
 		    if(light <= 1500){
-			    strcpy(lightsensor_color_1,LOWLIGHT);
+			    strcpy(lightsensor_color[0],LOWLIGHT);
 		    }
 		
 		    else{
-			    strcpy(lightsensor_color_1,BRIGHT);
+			    strcpy(lightsensor_color[0],BRIGHT);
 		    }
 		
 		    if(power >= 125){
-			    strcpy(powersensor_color_1,HIGHPOWER);
+			    strcpy(powersensor_color[0],HIGHPOWER);
 		    }
 		
 		    else{
-			    strcpy(powersensor_color_1,LOWPOWER);
+			    strcpy(powersensor_color[0],LOWPOWER);
 		    }
 		
 		
@@ -284,38 +254,38 @@ int main(){
             fgets( MsgConf[moteid-1], 150 , fp1);
             fclose(fp1);
 
-		    if(temperature>=5 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+		    if(temperature>2.5 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
-                strcpy(cooler_color_1,ON);
+                strcpy(cooler_color[0],ON);
 		    }
-            if(temperature<=3 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+            if(temperature<2 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
-                strcpy(cooler_color_1,OFF);
+                strcpy(cooler_color[0],OFF);
             }
         
 		    if(humidity>=90 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
-                strcpy(humidifier_color_1,OFF);
+                strcpy(humidifier_color[0],OFF);
 		    }
             if(humidity<=70 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
-                strcpy(humidifier_color_1,ON);
+                strcpy(humidifier_color[0],ON);
             }
         
             if(light <= 1500){
-			    strcpy(illumination_color_1,LIGHTON);
+			    strcpy(illumination_color[0],LIGHTON);
 		    }
 		
 		    if(light > 1500){
-			    strcpy(illumination_color_1,LIGHTOFF);
+			    strcpy(illumination_color[0],LIGHTOFF);
 		    }
 		
 		    if(power >= 125){
-			    strcpy(powersaver_color_1,ON);
+			    strcpy(powersaver_color[0],ON);
 		    }
 		
 		    if(power < 125){
-			    strcpy(powersaver_color_1,OFF);
+			    strcpy(powersaver_color[0],OFF);
 		    }	
 		
 
@@ -334,34 +304,34 @@ int main(){
         if(moteid==2){
            
 		    if(temperature >= 20){
-			    strcpy(tempsensor_color_2,HIGHTEMP);
+			    strcpy(tempsensor_color[1],HIGHTEMP);
 		    }
 			
 		    else{
-			    strcpy(tempsensor_color_2,LOWTEMP);
+			    strcpy(tempsensor_color[1],LOWTEMP);
 		    }
 		
 		    if(humidity >= 80){
-			    strcpy(humsensor_color_2,HIGHHUM);
+			    strcpy(humsensor_color[1],HIGHHUM);
 			    }
 		    else{
-                strcpy(humsensor_color_2,LOWHUM);
+                strcpy(humsensor_color[1],LOWHUM);
 		    }
 		
 		    if(light <= 1200){
-			    strcpy(lightsensor_color_2,LOWLIGHT);
+			    strcpy(lightsensor_color[1],LOWLIGHT);
 		    }
 		
 		    else{
-			    strcpy(lightsensor_color_2,BRIGHT);
+			    strcpy(lightsensor_color[1],BRIGHT);
 		    }
 		
 		    if(power >= 160){
-			    strcpy(powersensor_color_2,HIGHPOWER);
+			    strcpy(powersensor_color[1],HIGHPOWER);
 		    }
 		
 		    else{
-			    strcpy(powersensor_color_2,LOWPOWER);
+			    strcpy(powersensor_color[1],LOWPOWER);
 		    }
 		
 		
@@ -374,36 +344,36 @@ int main(){
 
 		    if(temperature>=23 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
-                strcpy(cooler_color_2,ON);
+                strcpy(cooler_color[1],ON);
 		    }
             if(temperature<=18 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
-                strcpy(cooler_color_2,OFF);
+                strcpy(cooler_color[1],OFF);
             }
         
 		    if(humidity>=31 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
-                strcpy(humidifier_color_2,OFF);
+                strcpy(humidifier_color[1],OFF);
 		    }
             if(humidity<29 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
-                strcpy(humidifier_color_2,ON);
+                strcpy(humidifier_color[1],ON);
             }
         
             if(light <= 1200){
-			    strcpy(illumination_color_2,LIGHTON);
+			    strcpy(illumination_color[1],LIGHTON);
 		    }
 		
 		    if(light > 1200){
-			    strcpy(illumination_color_2,LIGHTOFF);
+			    strcpy(illumination_color[1],LIGHTOFF);
 		    }
 		
 		    if(power >= 160){
-			    strcpy(powersaver_color_2,ON);
+			    strcpy(powersaver_color[1],ON);
 		    }
 		
 		    if(power < 160){
-			    strcpy(powersaver_color_2,OFF);
+			    strcpy(powersaver_color[1],OFF);
 		    }	
       
             fp2 = fopen("MsgCreator2/MsgCreatorConf.txt", "w");
@@ -412,12 +382,8 @@ int main(){
 
         }
 		
-        printf("%s\n", MsgConf[moteid-1]);
-        //strcpy(MsgConf,"");
-		for(int i=0; i<strlen(MsgConf[moteid-1]); i++){
-            MsgConf[moteid-1][i]=0;
-        }
-        printf("Vazia %s\n", MsgConf[moteid-1]);
+
+        strcpy(MsgConf[moteid-1],"");
 
 		//--------------------------------- ATUALIZAR RGBMATRIX -------------------------------------//
 
@@ -426,10 +392,10 @@ int main(){
 	    fprintf(matrix_channel,"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
                         "["WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,  					WALL,      WALL,	WALL,    WALL, 	                  WALL,     WALL,      WALL,                    WALL,  	WALL,\
                            WALL,        FLOOR,      FLOOR,      			FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,    FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
-                           WALL,        FLOOR,      tempsensor_color_1,     FLOOR,      FLOOR,      cooler_color_1, 	    FLOOR,     WALL,	FLOOR,   tempsensor_color_2,      FLOOR,    FLOOR,     cooler_color_2,          FLOOR, 	WALL,\
-                           WALL,        FLOOR,      humsensor_color_1,      FLOOR,      FLOOR,      humidifier_color_1, 	FLOOR,     WALL,	FLOOR,   humsensor_color_2,       FLOOR,    FLOOR,     humidifier_color_2,      FLOOR, 	WALL,\
-                           WALL,        FLOOR,      lightsensor_color_1,    FLOOR,      FLOOR,      illumination_color_1, 	FLOOR,     WALL,	FLOOR,   lightsensor_color_2,     FLOOR,    FLOOR,     illumination_color_2,    FLOOR, 	WALL,\
-                           WALL,        FLOOR,      powersensor_color_1,    FLOOR,      FLOOR,      powersaver_color_1, 	FLOOR,     WALL,	FLOOR,   powersensor_color_2,     FLOOR,    FLOOR,     powersaver_color_2,      FLOOR, 	WALL,\
+                           WALL,        FLOOR,      tempsensor_color[0],    FLOOR,      FLOOR,      cooler_color[0], 	    FLOOR,     WALL,	FLOOR,   tempsensor_color[1],     FLOOR,    FLOOR,     cooler_color[1],          FLOOR, 	WALL,\
+                           WALL,        FLOOR,      humsensor_color[0],     FLOOR,      FLOOR,      humidifier_color[0], 	FLOOR,     WALL,	FLOOR,   humsensor_color[1],      FLOOR,    FLOOR,     humidifier_color[1],      FLOOR, 	WALL,\
+                           WALL,        FLOOR,      lightsensor_color[0],   FLOOR,      FLOOR,      illumination_color[0], 	FLOOR,     WALL,	FLOOR,   lightsensor_color[1],    FLOOR,    FLOOR,     illumination_color[1],    FLOOR, 	WALL,\
+                           WALL,        FLOOR,      powersensor_color[0],   FLOOR,      FLOOR,      powersaver_color[0], 	FLOOR,     WALL,	FLOOR,   powersensor_color[1],    FLOOR,    FLOOR,     powersaver_color[1],      FLOOR, 	WALL,\
                            WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
                            WALL,        WALL,       WALL,       			WALL,       WALL,       WALL,   				WALL,      WALL,	WALL,    WALL,                    WALL,     WALL,      WALL,                    WALL, 	WALL,\
                            WALL,        FLOOR,      FLOOR,    				FLOOR,      FLOOR,      FLOOR, 					FLOOR,     WALL,	FLOOR,   FLOOR,                   FLOOR,    FLOOR,     FLOOR,                   FLOOR, 	WALL,\
@@ -442,9 +408,7 @@ int main(){
                         
 	    fclose(matrix_channel);
 	
-
-        
-		
+	
 		
     }
 }
