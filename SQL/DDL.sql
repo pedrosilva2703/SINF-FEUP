@@ -1,49 +1,101 @@
+/*******************************************************************************
+   Create Tables
+********************************************************************************/
+
 CREATE TABLE Sala (
-    id_da_sala INT PRIMARY KEY,   /*SERIAL*/
-    nome_da_sala VARCHAR(20)
+    id_sala INT NOT NULL,
+    nome_da_sala VARCHAR(20) NOT NULL,
+    id_mote INT NOT NULL,
+    CONSTRAINT PK_Sala PRIMARY KEY (id_sala)
 );
 
 CREATE TABLE Mote (
-    id_da_mote SERIAL PRIMARY KEY NOT NULL,   
+    id_mote INT NOT NULL,   
+    CONSTRAINT PK_Mote PRIMARY KEY (id_mote)
 );
 
 CREATE TABLE Sensor (
-    id_sensor INT PRIMARY KEY NOT NULL, 
-    tipo VARCHAR(20),
-                                  /*FK*/
+    id_sensor SERIAL NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    id_mote INT NOT NULL,
+    CONSTRAINT PK_Sensor PRIMARY KEY (id_sensor)
 );
 
-CREATE TABLE Valor do Sensor (
-    id_do_valor SERIAL PRIMARY KEY,
-    valor_medido FLOAT(25),
-    tempo FLOAT(25),
-                                    /*FK*/
+CREATE TABLE Valor_do_Sensor (
+    id_valor SERIAL NOT NULL,
+    valor_medido FLOAT(10),
+    tempo TIMESTAMP,
+    id_sensor SERIAL NOT NULL,
+    CONSTRAINT PK_Valor_do_Sensor PRIMARY KEY (id_valor)
 );
 
 CREATE TABLE Regras (
-    variavel VARCHAR(20) PRIMARY KEY,   /*SERIAL*/
-    maximo FLOAT(10),
-    minimo FLOAT(10),
-                                    /*FK*/
+    id_regras SERIAL NOT NULL,
+    variavel VARCHAR(20),
+    operacao VARCHAR(2),
+    referencia NUMERIC(10,2),
+    id_sensor SERIAL NOT NULL,
+    id_sala SERIAL NOT NULL,
+    id_atuador SERIAL NOT NULL,
+    CONSTRAINT PK_Regras PRIMARY KEY (id_regras)
+
 );
 
 CREATE TABLE Atuador (
-    id_atuador INT PRIMARY KEY NOT NULL,   /*SERIAL*/
-    nome VARCHAR(10),
-                                    /*FK*/
+    id_atuador SERIAL NOT NULL,
+    nome VARCHAR(20) NOT NULL,
+    id_sala SERIAL NOT NULL,
+    CONSTRAINT PK_Atuador PRIMARY KEY (id_atuador)
 );
 
 CREATE TABLE Estado_do_Atuador (
-    id_do_estado SERIAL PRIMARY KEY,   /*SERIAL*/
+    id_estado SERIAL NOT NULL,
     estado BOOLEAN,
-    tempo FLOAT(10),
-                                    /*FK*/
+    tempo TIMESTAMP,
+    id_atuador SERIAL NOT NULL,    
+    CONSTRAINT PK_Estado_do_Atuador PRIMARY KEY (id_estado)
 );
 
+/*******************************************************************************
+   Create Primary Key Unique Indexes
+********************************************************************************/
 
 
 
+/*******************************************************************************
+   Create Foreign Keys
+********************************************************************************/
+
+ALTER TABLE Sala ADD CONSTRAINT FK_Sala_id_mote
+    FOREIGN KEY (id_mote) REFERENCES Mote (id_mote) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 
 
-ALTER TABLE Sensor ADD CONSTRAINT
+ALTER TABLE Sensor ADD CONSTRAINT FK_Sensor_id_mote
+    FOREIGN KEY (id_mote) REFERENCES Mote (id_mote) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+ALTER TABLE Valor_do_Sensor ADD CONSTRAINT FK_ValorDoSensor_id_sensor
+    FOREIGN KEY (id_sensor) REFERENCES Sensor (id_sensor) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+ALTER TABLE Regras ADD CONSTRAINT FK_Regra_id_sensor
+    FOREIGN KEY (id_sensor) REFERENCES Sensor (id_sensor) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE Regras ADD CONSTRAINT FK_Regra_id_sala
+    FOREIGN KEY (id_sala) REFERENCES Sala (id_sala) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE Regras ADD CONSTRAINT FK_Regra_id_atuador
+    FOREIGN KEY (id_atuador) REFERENCES Atuador (id_atuador) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+ALTER TABLE Atuador ADD CONSTRAINT FK_Atuador_id_sala
+    FOREIGN KEY (id_sala) REFERENCES Sala (id_sala) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+ALTER TABLE Estado_do_Atuador ADD CONSTRAINT FK_EstadoDoAtuador_id_atuador
+    FOREIGN KEY (id_atuador) REFERENCES Atuador (id_atuador) ON DELETE NO ACTION ON UPDATE NO ACTION;
