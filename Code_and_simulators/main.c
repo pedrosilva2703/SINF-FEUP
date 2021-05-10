@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <postgresql/libpq-fe.h>
 
 #define NUMBER_OF_MOTES 2
 
@@ -29,7 +30,6 @@
 #define HIGHPOWER "[255,0,0]"
 
 
-
 const char *channelRGBMatrix = "/tmp/ttyV10";
 const char *channelMSGCreator = "/tmp/ttyV12";
 
@@ -46,12 +46,23 @@ char humidifier_color[NUMBER_OF_MOTES][20];
 char illumination_color[NUMBER_OF_MOTES][20];
 char powersaver_color[NUMBER_OF_MOTES][20];
 
-
 int slope[NUMBER_OF_MOTES][5] = {1,1,1,1,1,  1,1,1,1,1};     //variable slope=1 <=> slope>0  and slope=0 <=> slope<0
 
 FILE *sensor_data_channel;
 FILE *matrix_channel;
 
+
+PGconn *conn;
+PGresult *res;
+
+const char *dbconn;
+
+void cria_tabelas(){
+
+    PQexec(conn, "CREATE TABLE Sala (id_sala INT NOT NULL, nome_da_sala VARCHAR(20) NOT NULL, id_mote INT NOT NULL, CONSTRAINT PK_Sala PRIMARY KEY (id_sala))");
+    PQexec(conn, "CREATE TABLE Mote (id_mote INT NOT NULL, CONSTRAINT PK_Mote PRIMARY KEY (id_mote))");
+    //criar o resto
+}
 
 void setup_sensors_actuators_colors(void){
     
@@ -130,7 +141,70 @@ int main(){
     int moteid;
     double voltage, light, current, temperature, humidity, power;
 
+    //******************** Set up Database connection *******************************//
 
+
+    dbconn = "host = 'db.fe.up.pt' dbname = 'sinf2021a34' user = 'sinf2021a34' password = 'DuOHMMxK'";
+    conn = PQconnectdb(dbconn);
+
+    
+	
+	if (!conn){
+		//printf(stderr, "libpq error: PQconnectdb returned NULL. \n\n");
+		PQfinish(conn);
+		exit(1);
+	}
+	
+	else if (PQstatus(conn) != CONNECTION_OK){
+		//printf(stderr, "Connection to DB failed: %s", PQerrorMessage(conn));
+		PQfinish(conn);
+		exit(1);
+	}
+
+	else {
+		printf("Connection OK \n");
+		PQexec(conn,"SET search_path TO dba34,public");
+/*
+        res=PQexec(conn, "INSERT INTO mote VALUES (1)");
+        res=PQexec(conn, "INSERT INTO mote VALUES (2)");
+
+        res=PQexec(conn, "INSERT INTO sala VALUES (1, 'Frigorifico',1)");
+        res=PQexec(conn, "INSERT INTO sala VALUES (2, 'Armazenamento',2)");
+
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'tensao', 1)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'luminusidade', 1)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'corrente', 1)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'temperatura', 1)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'humidade', 1)");
+        
+
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'tensao', 2)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'luminusidade', 2)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'corrente', 2)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'temperatura', 2)");
+        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'humidade', 2)");
+
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'refrigerador', 1)");
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'humidificador', 1)");
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'iluminação', 1)");
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'economizador de energia', 1)");
+
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'refrigerador', 2)");
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'humidificador', 2)");
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'iluminação', 2)");
+        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'economizador de energia', 2)");
+*/
+        res=PQexec(conn, "SELECT * FROM atuador WHERE id_sala=1" );
+        printf("%s", PQgetvalue( res, 22, 0 ) );
+        printf("%s", PQgetvalue( res, 0, 1 ) );
+        printf("%s", PQgetvalue( res, 0, 2 ) );
+        PQfinish(conn);
+
+	}
+
+
+
+    return 0;
     //******************** Set up initial configuration of MsgCreatorConf.txt *******************************//
 
     FILE *fp1 = fopen("MsgCreatorConf.txt","w");
@@ -359,19 +433,8 @@ int main(){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],ON);
             }
-        
-            if(light <= 1200){
-			    strcpy(illumination_color[1],LIGHTON);
-		    }
-		
-		    if(light > 1200){
-			    strcpy(illumination_color[1],LIGHTOFF);
-		    }
-		
-		    if(power >= 160){
-			    strcpy(powersaver_color[1],ON);
-		    }
-		
+
+            
 		    if(power < 160){
 			    strcpy(powersaver_color[1],OFF);
 		    }	
@@ -408,7 +471,11 @@ int main(){
                         
 	    fclose(matrix_channel);
 	
-	
+
+        //--------------------------------- ATUALIZAR VALORES NA BASE DE DADOS -------------------------------------//
+
+       
+     
 		
     }
 }
