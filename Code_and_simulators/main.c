@@ -16,6 +16,11 @@
 #define TEMPERATURE_SENSOR_ID 3
 #define HUMIDITY_SENSOR_ID 4
 
+#define COOLER_ID 1
+#define HUMIDIFIER_ID 2
+#define ILLUMINATION_ID 3
+#define POWERSAVER_ID 4
+
 #define WALL      "[0,0,0]"
 #define FLOOR     "[200,200,200]"
 #define ON        "[0,255,0]"
@@ -51,6 +56,18 @@ char humidifier_color[NUMBER_OF_MOTES][20];
 char illumination_color[NUMBER_OF_MOTES][20];
 char powersaver_color[NUMBER_OF_MOTES][20];
 
+
+int cooler_state[NUMBER_OF_MOTES]={0,0};
+int humidifier_state[NUMBER_OF_MOTES]={0,0};
+int illumination_state[NUMBER_OF_MOTES]={0,0};
+int powersaver_state[NUMBER_OF_MOTES]={0,0};
+
+
+float tempmax[NUMBER_OF_MOTES], tempmin[NUMBER_OF_MOTES];
+float hummax[NUMBER_OF_MOTES], hummin[NUMBER_OF_MOTES]; 
+float lightmax[NUMBER_OF_MOTES], lightmin[NUMBER_OF_MOTES]; 
+float powmax[NUMBER_OF_MOTES], powmin[NUMBER_OF_MOTES];
+
 int slope[NUMBER_OF_MOTES][5] = {1,1,1,1,1,  1,1,1,1,1};     //variable slope=1 <=> slope>0  and slope=0 <=> slope<0
 
 FILE *sensor_data_channel;
@@ -70,10 +87,10 @@ void cria_tabelas(){
     PQexec(conn, "CREATE TABLE IF NOT EXISTS sala             (id_sala INT NOT NULL, nome_da_sala VARCHAR(20) NOT NULL, id_mote INT NOT NULL, CONSTRAINT PK_Sala PRIMARY KEY (id_sala))");
     PQexec(conn, "CREATE TABLE IF NOT EXISTS mote             (id_mote INT NOT NULL, CONSTRAINT PK_Mote PRIMARY KEY (id_mote))");
     PQexec(conn, "CREATE TABLE IF NOT EXISTS sensor           (id_sensor INT NOT NULL, tipo VARCHAR(20) NOT NULL, id_mote INT NOT NULL, CONSTRAINT PK_sensor PRIMARY KEY (id_sensor))");
-    PQexec(conn, "CREATE TABLE IF NOT EXISTS valor_do_sensor  (id_valor INT NOT NULL, valor_medido FLOAT(10), tempo TIMESTAMP, id_sensor INT NOT NULL, CONSTRAINT PK_valor_do_sensor PRIMARY KEY (id_valor))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS valor_do_sensor  (id_valor SERIAL NOT NULL, valor_medido FLOAT(10), tempo TIMESTAMP, id_sensor INT NOT NULL, CONSTRAINT PK_valor_do_sensor PRIMARY KEY (id_valor))");
     PQexec(conn, "CREATE TABLE IF NOT EXISTS regras           (id_regras INT NOT NULL, variavel VARCHAR(20),operacao VARCHAR(2), referencia NUMERIC(10,2), id_sensor INT NOT NULL, id_sala INT NOT NULL, id_atuador INT NOT NULL, CONSTRAINT PK_regras PRIMARY KEY (id_regras))");
     PQexec(conn, "CREATE TABLE IF NOT EXISTS atuador          (id_atuador INT NOT NULL, nome VARCHAR(20) NOT NULL, id_sala INT NOT NULL, CONSTRAINT PK_atuador PRIMARY KEY (id_atuador))");
-    PQexec(conn, "CREATE TABLE IF NOT EXISTS estado_do_atuador(id_estado INT NOT NULL, estado BOOLEAN, tempo TIMESTAMP, id_atuador INT NOT NULL, CONSTRAINT PK_estado_do_atuador PRIMARY KEY (id_estado))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS estado_do_atuador(id_estado SERIAL NOT NULL, estado BOOLEAN, tempo TIMESTAMP, id_atuador INT NOT NULL, CONSTRAINT PK_estado_do_atuador PRIMARY KEY (id_estado))");
 
     //Foreign keys
     PQexec(conn, "ALTER TABLE sala ADD CONSTRAINT FK_sala_id_mote FOREIGN KEY (id_mote) REFERENCES mote (id_mote) ON DELETE NO ACTION ON UPDATE NO ACTION");
@@ -150,7 +167,21 @@ void positive_slope(int sensor_number, int moteid){
 }
 
 int main(){
-   
+    float tempmax[NUMBER_OF_MOTES], tempmin[NUMBER_OF_MOTES];
+    float hummax[NUMBER_OF_MOTES], hummin[NUMBER_OF_MOTES]; 
+    float lightmax[NUMBER_OF_MOTES], lightmin[NUMBER_OF_MOTES]; 
+    float powmax[NUMBER_OF_MOTES], powmin[NUMBER_OF_MOTES];
+    
+    tempmax[0]= 2.5;    tempmin[0]= 2;
+    hummax[0]= 90;      hummin[0]=70;
+    lightmax[0]=1500;   lightmin[0]=1500;
+    powmax[0]=125;      powmin[0]=125;
+    
+    tempmax[1]= 23;    tempmin[1]= 18;
+    hummax[1]= 30;      hummin[1]=30;
+    lightmax[1]=1200;   lightmin[1]=1200;
+    powmax[1]=160;      powmin[1]=160;
+
     char hxmoteid[4];
     char hxvoltage[4];
     char hxlight[4];
@@ -202,7 +233,6 @@ int main(){
 
             sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'tensao', %d)", VOLTAGE_SENSOR_ID+1+5*i, i+1 );
             res=PQexec(conn, buffer);
-            puts(buffer);
             sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'luminosidade', %d)", LIGHT_SENSOR_ID+1+5*i, i+1 );
             res=PQexec(conn, buffer);
             sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'corrente', %d)", CURRENT_SENSOR_ID+1+5*i, i+1 );
@@ -213,30 +243,29 @@ int main(){
             res=PQexec(conn, buffer);
 
 
-            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'refrigerador', %d)", VOLTAGE_SENSOR_ID+1+5*i, i+1 );
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'refrigerador', %d)", COOLER_ID+4*i, i+1 );
             res=PQexec(conn, buffer);
-            puts(buffer);
-            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'humidificador', %d)", LIGHT_SENSOR_ID+1+5*i, i+1 );
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'humidificador', %d)", HUMIDIFIER_ID+4*i, i+1 );
             res=PQexec(conn, buffer);
-            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'iluminacao', %d)", CURRENT_SENSOR_ID+1+5*i, i+1 );
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'iluminacao', %d)", ILLUMINATION_ID+4*i, i+1 );
             res=PQexec(conn, buffer);
-            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'powersaver', %d)", TEMPERATURE_SENSOR_ID+1+5*i, i+1 );
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'powersaver', %d)", POWERSAVER_ID+4*i, i+1 );
             res=PQexec(conn, buffer);
 
         }
-
+/*
 
         res=PQexec(conn, "SELECT * FROM atuador WHERE id_sala=1" );
         printf("%s", PQgetvalue( res, 22, 0 ) );
         printf("%s", PQgetvalue( res, 0, 1 ) );
-        printf("%s", PQgetvalue( res, 0, 2 ) );*/
-        PQfinish(conn);
+        printf("%s", PQgetvalue( res, 0, 2 ) );
+        PQfinish(conn);*/
 
 	}
 
 
 
-    return 0;
+
     //******************** Set up initial configuration of MsgCreatorConf.txt *******************************//
 
     FILE *fp1 = fopen("MsgCreatorConf.txt","w");
@@ -319,7 +348,6 @@ int main(){
 
 		//-------------------------------------------------------------- MOTE 1 ------------------------------//
         
-        float tempmax[NUMBER_OF_MOTES], tempmin[NUMBER_OF_MOTES], hummax[NUMBER_OF_MOTES], hummin[NUMBER_OF_MOTES], lightmax[NUMBER_OF_MOTES], lightmin[NUMBER_OF_MOTES], powmax[NUMBER_OF_MOTES], powmin[NUMBER_OF_MOTES];
 
 
         if(moteid==1){
@@ -363,37 +391,39 @@ int main(){
             fgets( MsgConf[moteid-1], 150 , fp1);
             fclose(fp1);
 
-		    if(temperature>tempmax[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+		    if(temperature>tempmax[moteid-1] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[0],ON);
+                cooler_state[moteid-1]=1;
 		    }
-            if(temperature<tempmin[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+            if(temperature<tempmin[moteid-1] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[0],OFF);
+                cooler_state[moteid-1]=0;
             }
         
-		    if(humidity>=hummax[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+		    if(humidity>=hummax[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[0],OFF);
 		    }
-            if(humidity<=hummin[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+            if(humidity<=hummin[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[0],ON);
             }
         
-            if(light <= lightmin[moteid]){
+            if(light <= lightmin[moteid-1]){
 			    strcpy(illumination_color[0],LIGHTON);
 		    }
 		
-		    if(light > lightmax[moteid]){
+		    if(light > lightmax[moteid-1]){
 			    strcpy(illumination_color[0],LIGHTOFF);
 		    }
 		
-		    if(power >= powmax[moteid]){
+		    if(power >= powmax[moteid-1]){
 			    strcpy(powersaver_color[0],ON);
 		    }
 		
-		    if(power < powmin[moteid]){
+		    if(power < powmin[moteid-1]){
 			    strcpy(powersaver_color[0],OFF);
 		    }	
 		
@@ -451,37 +481,37 @@ int main(){
             fgets( MsgConf[moteid-1], 150 , fp2);
             fclose(fp2);
 
-		    if(temperature>=tempmax[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+		    if(temperature>=tempmax[moteid-1] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[1],ON);
 		    }
-            if(temperature<=tempmin[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+            if(temperature<tempmin[moteid-1] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[1],OFF);
             }
         
-		    if(humidity>=hummax[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+		    if(humidity>=hummax[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],OFF);
 		    }
-            if(humidity<hummin[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+            if(humidity<hummin[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],ON);
             }
 
-		    if(light <= lightmin[moteid]){
+		    if(light <= lightmin[moteid-1]){
 			    strcpy(illumination_color[1],LIGHTON);
 		    }
 		
-		    if(light > lightmax[moteid]){
+		    if(light > lightmax[moteid-1]){
 			    strcpy(illumination_color[1],LIGHTOFF);
 		    }
 		
-		    if(power >= powmax[moteid]){
+		    if(power >= powmax[moteid-1]){
 			    strcpy(powersaver_color[1],ON);
 		    }
 		
-		    if(power < powmin[moteid]){
+		    if(power < powmin[moteid-1]){
 			    strcpy(powersaver_color[1],OFF);
 		    }
       
@@ -519,9 +549,58 @@ int main(){
 	
 
         //--------------------------------- ATUALIZAR VALORES NA BASE DE DADOS -------------------------------------//
+        
 
+        //ATUALIZA VALORES DOS SENSORES
+
+        sprintf(buffer,"INSERT INTO valor_do_sensor VALUES (DEFAULT, %f, CURRENT_TIMESTAMP, %d)", voltage, VOLTAGE_SENSOR_ID+1+5*(moteid-1) );
+        res=PQexec(conn, buffer);
+
+        sprintf(buffer,"INSERT INTO valor_do_sensor VALUES (DEFAULT, %f, CURRENT_TIMESTAMP, %d)", light, LIGHT_SENSOR_ID+1+5*(moteid-1) );
+        res=PQexec(conn, buffer);
+
+        sprintf(buffer,"INSERT INTO valor_do_sensor VALUES (DEFAULT, %f, CURRENT_TIMESTAMP, %d)", current, CURRENT_SENSOR_ID+1+5*(moteid-1) );
+        res=PQexec(conn, buffer);
+
+        sprintf(buffer,"INSERT INTO valor_do_sensor VALUES (DEFAULT, %f, CURRENT_TIMESTAMP, %d)", temperature, TEMPERATURE_SENSOR_ID+1+5*(moteid-1) );
+        res=PQexec(conn, buffer);
+
+        sprintf(buffer,"INSERT INTO valor_do_sensor VALUES (DEFAULT, %f, CURRENT_TIMESTAMP, %d)", humidity, HUMIDITY_SENSOR_ID+1+5*(moteid-1) );
+        res=PQexec(conn, buffer);
        
-     
+        //ATUALIZA ESTADO DOS ATUADORES
+
+        if(cooler_state[moteid-1]==1){
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", COOLER_ID+4*(moteid-1) );
+        }
+        else{
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", COOLER_ID+4*(moteid-1) );
+        }
+        res=PQexec(conn, buffer);
+
+        if(humidifier_state[moteid-1]==1){
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", HUMIDIFIER_ID+4*(moteid-1) );
+        }
+        else{
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", HUMIDIFIER_ID+4*(moteid-1) );
+        }
+        res=PQexec(conn, buffer);
+        
+        if(illumination_state[moteid-1]==1){
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", ILLUMINATION_ID+4*(moteid-1) );
+        }
+        else{
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", ILLUMINATION_ID+4*(moteid-1) );
+        }
+        res=PQexec(conn, buffer);
+
+        if(powersaver_state[moteid-1]==1){
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", POWERSAVER_ID+4*(moteid-1) );
+        }
+        else{
+            sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", POWERSAVER_ID+4*(moteid-1) );
+        }
+        res=PQexec(conn, buffer);
 		
     }
 }
