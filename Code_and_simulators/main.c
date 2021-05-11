@@ -318,6 +318,9 @@ int main(){
 		power = voltage * current;
 
 		//-------------------------------------------------------------- MOTE 1 ------------------------------//
+        
+        float tempmax[NUMBER_OF_MOTES], tempmin[NUMBER_OF_MOTES], hummax[NUMBER_OF_MOTES], hummin[NUMBER_OF_MOTES], lightmax[NUMBER_OF_MOTES], lightmin[NUMBER_OF_MOTES], powmax[NUMBER_OF_MOTES], powmin[NUMBER_OF_MOTES];
+
 
         if(moteid==1){
 
@@ -360,37 +363,37 @@ int main(){
             fgets( MsgConf[moteid-1], 150 , fp1);
             fclose(fp1);
 
-		    if(temperature>2.5 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+		    if(temperature>tempmax[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[0],ON);
 		    }
-            if(temperature<2 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+            if(temperature<tempmin[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[0],OFF);
             }
         
-		    if(humidity>=90 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+		    if(humidity>=hummax[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[0],OFF);
 		    }
-            if(humidity<=70 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+            if(humidity<=hummin[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[0],ON);
             }
         
-            if(light <= 1500){
+            if(light <= lightmin[moteid]){
 			    strcpy(illumination_color[0],LIGHTON);
 		    }
 		
-		    if(light > 1500){
+		    if(light > lightmax[moteid]){
 			    strcpy(illumination_color[0],LIGHTOFF);
 		    }
 		
-		    if(power >= 125){
+		    if(power >= powmax[moteid]){
 			    strcpy(powersaver_color[0],ON);
 		    }
 		
-		    if(power < 125){
+		    if(power < powmin[moteid]){
 			    strcpy(powersaver_color[0],OFF);
 		    }	
 		
@@ -448,33 +451,44 @@ int main(){
             fgets( MsgConf[moteid-1], 150 , fp2);
             fclose(fp2);
 
-		    if(temperature>=23 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
+		    if(temperature>=tempmax[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[1],ON);
 		    }
-            if(temperature<=18 && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
+            if(temperature<=tempmin[moteid] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[1],OFF);
             }
         
-		    if(humidity>=31 && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
+		    if(humidity>=hummax[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],OFF);
 		    }
-            if(humidity<29 && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
+            if(humidity<hummin[moteid] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],ON);
             }
 
-            
-		    if(power < 160){
+		    if(light <= lightmin[moteid]){
+			    strcpy(illumination_color[1],LIGHTON);
+		    }
+		
+		    if(light > lightmax[moteid]){
+			    strcpy(illumination_color[1],LIGHTOFF);
+		    }
+		
+		    if(power >= powmax[moteid]){
+			    strcpy(powersaver_color[1],ON);
+		    }
+		
+		    if(power < powmin[moteid]){
 			    strcpy(powersaver_color[1],OFF);
-		    }	
+		    }
       
             fp2 = fopen("MsgCreator2/MsgCreatorConf.txt", "w");
             fprintf(fp2,"%s",MsgConf[moteid-1]);
             fclose(fp2);
-
+            
         }
 		
 
