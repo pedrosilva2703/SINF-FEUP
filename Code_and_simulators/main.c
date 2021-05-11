@@ -3,6 +3,7 @@
 #include <string.h>
 #include <postgresql/libpq-fe.h>
 
+
 #define NUMBER_OF_MOTES 2
 
 #define MAX_MSG_SIZE 75
@@ -28,6 +29,8 @@
 #define BRIGHT    "[255,255,255]"
 #define LOWPOWER  "[255,165,0]"
 #define HIGHPOWER "[255,0,0]"
+
+char salas[NUMBER_OF_MOTES][MAX_MSG_SIZE];
 
 
 const char *channelRGBMatrix = "/tmp/ttyV10";
@@ -57,11 +60,29 @@ PGresult *res;
 
 const char *dbconn;
 
+char buffer[250];
+
 void cria_tabelas(){
 
-    PQexec(conn, "CREATE TABLE Sala (id_sala INT NOT NULL, nome_da_sala VARCHAR(20) NOT NULL, id_mote INT NOT NULL, CONSTRAINT PK_Sala PRIMARY KEY (id_sala))");
-    PQexec(conn, "CREATE TABLE Mote (id_mote INT NOT NULL, CONSTRAINT PK_Mote PRIMARY KEY (id_mote))");
-    //criar o resto
+    //Criar tabelas
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS sala             (id_sala INT NOT NULL, nome_da_sala VARCHAR(20) NOT NULL, id_mote INT NOT NULL, CONSTRAINT PK_Sala PRIMARY KEY (id_sala))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS mote             (id_mote INT NOT NULL, CONSTRAINT PK_Mote PRIMARY KEY (id_mote))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS sensor           (id_sensor INT NOT NULL, tipo VARCHAR(20) NOT NULL, id_mote INT NOT NULL, CONSTRAINT PK_sensor PRIMARY KEY (id_sensor))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS valor_do_sensor  (id_valor INT NOT NULL, valor_medido FLOAT(10), tempo TIMESTAMP, id_sensor INT NOT NULL, CONSTRAINT PK_valor_do_sensor PRIMARY KEY (id_valor))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS regras           (id_regras INT NOT NULL, variavel VARCHAR(20),operacao VARCHAR(2), referencia NUMERIC(10,2), id_sensor INT NOT NULL, id_sala INT NOT NULL, id_atuador INT NOT NULL, CONSTRAINT PK_regras PRIMARY KEY (id_regras))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS atuador          (id_atuador INT NOT NULL, nome VARCHAR(20) NOT NULL, id_sala INT NOT NULL, CONSTRAINT PK_atuador PRIMARY KEY (id_atuador))");
+    PQexec(conn, "CREATE TABLE IF NOT EXISTS estado_do_atuador(id_estado INT NOT NULL, estado BOOLEAN, tempo TIMESTAMP, id_atuador INT NOT NULL, CONSTRAINT PK_estado_do_atuador PRIMARY KEY (id_estado))");
+
+    //Foreign keys
+    PQexec(conn, "ALTER TABLE sala ADD CONSTRAINT FK_sala_id_mote FOREIGN KEY (id_mote) REFERENCES mote (id_mote) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE sensor ADD CONSTRAINT FK_sensor_id_mote FOREIGN KEY (id_mote) REFERENCES mote (id_mote) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE valor_do_sensor ADD CONSTRAINT FK_valordosensor_id_sensor FOREIGN KEY (id_sensor) REFERENCES sensor (id_sensor) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE regras ADD CONSTRAINT FK_regra_id_sensor FOREIGN KEY (id_sensor) REFERENCES sensor (id_sensor) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE regras ADD CONSTRAINT FK_regra_id_sala FOREIGN KEY (id_sala) REFERENCES sala (id_sala) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE regras ADD CONSTRAINT FK_regra_id_atuador FOREIGN KEY (id_atuador) REFERENCES atuador (id_atuador) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE atuador ADD CONSTRAINT FK_atuador_id_sala FOREIGN KEY (id_sala) REFERENCES sala (id_sala) ON DELETE NO ACTION ON UPDATE NO ACTION");
+    PQexec(conn, "ALTER TABLE estado_do_atuador ADD CONSTRAINT FK_estadodoatuador_id_atuador FOREIGN KEY (id_atuador) REFERENCES Atuador (id_atuador) ON DELETE NO ACTION ON UPDATE NO ACTION");
+
 }
 
 void setup_sensors_actuators_colors(void){
@@ -164,13 +185,22 @@ int main(){
 	else {
 		printf("Connection OK \n");
 		PQexec(conn,"SET search_path TO dba34,public");
-/*
-        res=PQexec(conn, "INSERT INTO mote VALUES (1)");
-        res=PQexec(conn, "INSERT INTO mote VALUES (2)");
+
+        cria_tabelas();
+        
+        for(int i=0; i<NUMBER_OF_MOTES; i++){
+            sprintf(buffer, "INSERT INTO mote VALUES (%d)", i+1);
+            res=PQexec(conn, buffer);
+        }
+      
+      
+      /*  
+
 
         res=PQexec(conn, "INSERT INTO sala VALUES (1, 'Frigorifico',1)");
         res=PQexec(conn, "INSERT INTO sala VALUES (2, 'Armazenamento',2)");
 
+        
         res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'tensao', 1)");
         res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'luminusidade', 1)");
         res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'corrente', 1)");
@@ -193,11 +223,11 @@ int main(){
         res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'humidificador', 2)");
         res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'iluminação', 2)");
         res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'economizador de energia', 2)");
-*/
+
         res=PQexec(conn, "SELECT * FROM atuador WHERE id_sala=1" );
         printf("%s", PQgetvalue( res, 22, 0 ) );
         printf("%s", PQgetvalue( res, 0, 1 ) );
-        printf("%s", PQgetvalue( res, 0, 2 ) );
+        printf("%s", PQgetvalue( res, 0, 2 ) );*/
         PQfinish(conn);
 
 	}
