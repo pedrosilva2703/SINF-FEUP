@@ -3,6 +3,8 @@
 #include <string.h>
 #include <postgresql/libpq-fe.h>
 
+#define SALA_1 "frigorifico"
+#define SALA_2 "armazenamento"
 
 #define NUMBER_OF_MOTES 2
 
@@ -30,7 +32,7 @@
 #define LOWPOWER  "[255,165,0]"
 #define HIGHPOWER "[255,0,0]"
 
-char salas[NUMBER_OF_MOTES][MAX_MSG_SIZE];
+char sala[NUMBER_OF_MOTES][MAX_MSG_SIZE];
 
 
 const char *channelRGBMatrix = "/tmp/ttyV10";
@@ -188,41 +190,41 @@ int main(){
 
         cria_tabelas();
         
+        strcpy(sala[0], SALA_1);
+        strcpy(sala[1], SALA_2);
+      
         for(int i=0; i<NUMBER_OF_MOTES; i++){
             sprintf(buffer, "INSERT INTO mote VALUES (%d)", i+1);
             res=PQexec(conn, buffer);
+
+            sprintf(buffer, "INSERT INTO sala VALUES (%d, '%s', %d)",i+1, sala[i], i+1);
+            res=PQexec(conn, buffer);
+
+            sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'tensao', %d)", VOLTAGE_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            puts(buffer);
+            sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'luminosidade', %d)", LIGHT_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'corrente', %d)", CURRENT_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'temperatura', %d)", TEMPERATURE_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            sprintf(buffer,"INSERT INTO sensor VALUES (%d, 'humidade', %d)", HUMIDITY_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+
+
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'refrigerador', %d)", VOLTAGE_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            puts(buffer);
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'humidificador', %d)", LIGHT_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'iluminacao', %d)", CURRENT_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+            sprintf(buffer,"INSERT INTO atuador VALUES (%d, 'powersaver', %d)", TEMPERATURE_SENSOR_ID+1+5*i, i+1 );
+            res=PQexec(conn, buffer);
+
         }
-      
-      
-      /*  
 
-
-        res=PQexec(conn, "INSERT INTO sala VALUES (1, 'Frigorifico',1)");
-        res=PQexec(conn, "INSERT INTO sala VALUES (2, 'Armazenamento',2)");
-
-        
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'tensao', 1)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'luminusidade', 1)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'corrente', 1)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'temperatura', 1)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'humidade', 1)");
-        
-
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'tensao', 2)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'luminusidade', 2)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'corrente', 2)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'temperatura', 2)");
-        res=PQexec(conn, "INSERT INTO sensor VALUES (DEFAULT, 'humidade', 2)");
-
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'refrigerador', 1)");
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'humidificador', 1)");
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'iluminação', 1)");
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'economizador de energia', 1)");
-
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'refrigerador', 2)");
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'humidificador', 2)");
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'iluminação', 2)");
-        res=PQexec(conn, "INSERT INTO atuador VALUES (DEFAULT, 'economizador de energia', 2)");
 
         res=PQexec(conn, "SELECT * FROM atuador WHERE id_sala=1" );
         printf("%s", PQgetvalue( res, 22, 0 ) );
