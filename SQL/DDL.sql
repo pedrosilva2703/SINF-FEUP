@@ -15,7 +15,7 @@ CREATE TABLE mote (
 );
 
 CREATE TABLE sensor (
-    id_sensor SERIAL NOT NULL,
+    id_sensor INT NOT NULL,
     tipo VARCHAR(20) NOT NULL,
     id_mote INT NOT NULL,
     CONSTRAINT PK_sensor PRIMARY KEY (id_sensor)
@@ -25,26 +25,26 @@ CREATE TABLE valor_do_sensor (
     id_valor SERIAL NOT NULL,
     valor_medido FLOAT(10),
     tempo TIMESTAMP,
-    id_sensor SERIAL NOT NULL,
+    id_sensor INT NOT NULL,
     CONSTRAINT PK_valor_do_sensor PRIMARY KEY (id_valor)
 );
 
 CREATE TABLE regras (
-    id_regras SERIAL NOT NULL,
+    id_regras INT NOT NULL,
     variavel VARCHAR(20),
     operacao VARCHAR(2),
     referencia NUMERIC(10,2),
-    id_sensor SERIAL NOT NULL,
-    id_sala SERIAL NOT NULL,
-    id_atuador SERIAL NOT NULL,
+    id_sensor INT NOT NULL,
+    id_sala INT NOT NULL,
+    id_atuador INT NOT NULL,
     CONSTRAINT PK_regras PRIMARY KEY (id_regras)
 
 );
 
 CREATE TABLE atuador (
-    id_atuador SERIAL NOT NULL,
+    id_atuador INT NOT NULL,
     nome VARCHAR(20) NOT NULL,
-    id_sala SERIAL NOT NULL,
+    id_sala INT NOT NULL,
     CONSTRAINT PK_atuador PRIMARY KEY (id_atuador)
 );
 
@@ -52,7 +52,7 @@ CREATE TABLE estado_do_atuador (
     id_estado SERIAL NOT NULL,
     estado BOOLEAN,
     tempo TIMESTAMP,
-    id_atuador SERIAL NOT NULL,    
+    id_atuador INT NOT NULL,    
     CONSTRAINT PK_estado_do_atuador PRIMARY KEY (id_estado)
 );
 
