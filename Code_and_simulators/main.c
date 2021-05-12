@@ -224,6 +224,8 @@ int main(){
         strcpy(sala[0], SALA_1);
         strcpy(sala[1], SALA_2);
       
+        //Insere configuracoes (ids das motes, respetivas salas e respetivos sensores e atuadores)
+
         for(int i=0; i<NUMBER_OF_MOTES; i++){
             sprintf(buffer, "INSERT INTO mote VALUES (%d)", i+1);
             res=PQexec(conn, buffer);
@@ -253,13 +255,122 @@ int main(){
             res=PQexec(conn, buffer);
 
         }
-/*
 
-        res=PQexec(conn, "SELECT * FROM atuador WHERE id_sala=1" );
-        printf("%s", PQgetvalue( res, 22, 0 ) );
-        printf("%s", PQgetvalue( res, 0, 1 ) );
-        printf("%s", PQgetvalue( res, 0, 2 ) );
-        PQfinish(conn);*/
+
+        //Verifica regras existentes
+        for(int i=0; i<NUMBER_OF_MOTES; i++){
+            
+            //TEMPERATURA MAXIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 1+(i*8) );
+            res=PQexec(conn, buffer );
+        
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'temperatura', '>=', %f, %d, %d, %d )", 1+(i*8), tempmax[i], TEMPERATURE_SENSOR_ID+1+(i*5), i+1, COOLER_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                tempmax[i] = atof(buffer);
+            }
+
+            //TEMPERATURA MINIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 2+(i*8) );
+            res=PQexec(conn, buffer );
+
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'temperatura', '<', %f, %d, %d, %d )", 2+(i*8), tempmin[i], TEMPERATURE_SENSOR_ID+1+(i*5), i+1, COOLER_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                tempmin[i] = atof(buffer);
+            }
+
+
+            //HUMIDADE MAXIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 3+(i*8) );
+            res=PQexec(conn, buffer );
+        
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'humidade', '>=', %f, %d, %d, %d )", 3+(i*8), hummax[i], HUMIDITY_SENSOR_ID+1+(i*5), i+1, HUMIDIFIER_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                hummax[i] = atof(buffer);
+            }
+
+            //HUMIDADE MINIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 4+(i*8) );
+            res=PQexec(conn, buffer );
+
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'humidade', '<', %f, %d, %d, %d )", 4+(i*8), hummin[i], HUMIDITY_SENSOR_ID+1+(i*5), i+1, HUMIDIFIER_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                hummin[i] = atof(buffer);
+            }
+
+
+            //LUMINOSIDADE MAXIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 5+(i*8) );
+            res=PQexec(conn, buffer );
+        
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'luminosidade', '>=', %f, %d, %d, %d )", 5+(i*8), lightmax[i], LIGHT_SENSOR_ID+1+(i*5), i+1, ILLUMINATION_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                lightmax[i] = atof(buffer);
+            }
+
+            //LUMINOSIDADE MINIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 6+(i*8) );
+            res=PQexec(conn, buffer );
+
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'luminosidade', '<', %f, %d, %d, %d )", 6+(i*8), lightmin[i], LIGHT_SENSOR_ID+1+(i*5), i+1, ILLUMINATION_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                lightmin[i] = atof(buffer);
+            }
+
+
+            //POTENCIA MAXIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 7+(i*8) );
+            res=PQexec(conn, buffer );
+        
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'potencia', '>=', %f, %d, %d, %d )", 7+(i*8), powmax[i], VOLTAGE_SENSOR_ID+1+(i*5), i+1, POWERSAVER_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                powmax[i] = atof(buffer);
+            }
+
+            //POTENCIA MINIMA
+            sprintf(buffer, "SELECT referencia FROM regras WHERE id_regras=%d", 8+(i*8) );
+            res=PQexec(conn, buffer );
+
+            if( PQgetisnull(res,0,0) ){
+                sprintf(buffer,"INSERT INTO regras VALUES (%d, 'potencia', '<', %f, %d, %d, %d )", 8+(i*8), powmin[i], VOLTAGE_SENSOR_ID+1+(i*5), i+1, POWERSAVER_ID+(4*i) );
+                res=PQexec(conn, buffer);
+            }           
+            else{
+                sprintf(buffer, "%s", PQgetvalue(res,0,0) );
+                powmin[i] = atof(buffer);
+            }
+
+
+
+
+        }
 
 	}
 
