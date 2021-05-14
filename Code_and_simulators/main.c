@@ -516,26 +516,32 @@ int main(){
 		    if(humidity>=hummax[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[0],OFF);
+                humidifier_state[moteid-1]=0;
 		    }
             if(humidity<=hummin[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[0],ON);
+                humidifier_state[moteid-1]=1;
             }
         
             if(light <= lightmin[moteid-1]){
 			    strcpy(illumination_color[0],LIGHTON);
+                illumination_state[moteid-1]=1;
 		    }
 		
 		    if(light > lightmax[moteid-1]){
 			    strcpy(illumination_color[0],LIGHTOFF);
+                illumination_state[moteid-1]=0;
 		    }
 		
 		    if(power >= powmax[moteid-1]){
 			    strcpy(powersaver_color[0],ON);
+                powersaver_state[moteid-1]=1;
 		    }
 		
 		    if(power < powmin[moteid-1]){
 			    strcpy(powersaver_color[0],OFF);
+                powersaver_state[moteid-1]=0;
 		    }	
 		
 
@@ -595,35 +601,43 @@ int main(){
 		    if(temperature>=tempmax[moteid-1] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==1 ){
                 negative_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[1],ON);
+                cooler_state[moteid-1]=1;
 		    }
             if(temperature<tempmin[moteid-1] && slope[moteid-1][TEMPERATURE_SENSOR_ID]==0){
                 positive_slope(TEMPERATURE_SENSOR_ID, moteid);
                 strcpy(cooler_color[1],OFF);
+                cooler_state[moteid-1]=0;
             }
         
 		    if(humidity>=hummax[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==1 ){
                 negative_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],OFF);
+                humidifier_state[moteid-1]=0;
 		    }
             if(humidity<hummin[moteid-1] && slope[moteid-1][HUMIDITY_SENSOR_ID]==0){
                 positive_slope(HUMIDITY_SENSOR_ID, moteid);
                 strcpy(humidifier_color[1],ON);
+                humidifier_state[moteid-1]=1;
             }
 
 		    if(light <= lightmin[moteid-1]){
 			    strcpy(illumination_color[1],LIGHTON);
+                illumination_state[moteid-1]=1;
 		    }
 		
 		    if(light > lightmax[moteid-1]){
 			    strcpy(illumination_color[1],LIGHTOFF);
+                illumination_state[moteid-1]=0;
 		    }
 		
 		    if(power >= powmax[moteid-1]){
 			    strcpy(powersaver_color[1],ON);
+                powersaver_state[moteid-1]=1;
 		    }
 		
 		    if(power < powmin[moteid-1]){
 			    strcpy(powersaver_color[1],OFF);
+                powersaver_state[moteid-1]=0;
 		    }
       
             fp2 = fopen("MsgCreator2/MsgCreatorConf.txt", "w");
@@ -684,7 +698,7 @@ int main(){
         if(cooler_state[moteid-1]==1){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", COOLER_ID+4*(moteid-1) );
         }
-        else{
+        else if(cooler_state[moteid-1]==0){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", COOLER_ID+4*(moteid-1) );
         }
         res=PQexec(conn, buffer);
@@ -692,7 +706,7 @@ int main(){
         if(humidifier_state[moteid-1]==1){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", HUMIDIFIER_ID+4*(moteid-1) );
         }
-        else{
+        else if(humidifier_state[moteid-1]==0){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", HUMIDIFIER_ID+4*(moteid-1) );
         }
         res=PQexec(conn, buffer);
@@ -700,7 +714,7 @@ int main(){
         if(illumination_state[moteid-1]==1){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", ILLUMINATION_ID+4*(moteid-1) );
         }
-        else{
+        else if(illumination_state[moteid-1]==0){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", ILLUMINATION_ID+4*(moteid-1) );
         }
         res=PQexec(conn, buffer);
@@ -708,7 +722,7 @@ int main(){
         if(powersaver_state[moteid-1]==1){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, TRUE, CURRENT_TIMESTAMP, %d)", POWERSAVER_ID+4*(moteid-1) );
         }
-        else{
+        else if(powersaver_state[moteid-1]==0){
             sprintf(buffer,"INSERT INTO estado_do_atuador VALUES (DEFAULT, FALSE, CURRENT_TIMESTAMP, %d)", POWERSAVER_ID+4*(moteid-1) );
         }
         res=PQexec(conn, buffer);
