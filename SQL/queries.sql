@@ -38,12 +38,19 @@ FROM valor_do_sensor
  JOIN sala ON sala.id_mote=sensor.id_mote
 WHERE sensor.tipo = 'temperatura' AND sala.nome_da_sala = 'armazenamento' AND tempo BETWEEN '2021-05-14 13:30:44' AND '2021-05-14 13:35:44'
 
-/* Ex 2  ??? */
+/* Ex 2 */
 
-SELECT atuador.nome AS actuator, sala.nome_da_sala AS cell, estado_do_atuador.estado AS state
+(SELECT atuador.nome AS actuator, sala.nome_da_sala AS cell, estado_do_atuador.estado AS state
 FROM estado_do_atuador
  JOIN atuador ON atuador.id_atuador=estado_do_atuador.id_atuador
  JOIN sala ON sala.id_sala=atuador.id_sala
-ORDER BY estado_do_atuador.tempo DESC
-
+WHERE sala.nome_da_sala = 'frigorifico'
+ORDER BY estado_do_atuador.tempo DESC LIMIT 4)
+UNION ALL
+(SELECT atuador.nome AS actuator, sala.nome_da_sala AS cell, estado_do_atuador.estado AS state
+FROM estado_do_atuador
+ JOIN atuador ON atuador.id_atuador=estado_do_atuador.id_atuador
+ JOIN sala ON sala.id_sala=atuador.id_sala
+WHERE sala.nome_da_sala = 'armazenamento' 
+ORDER BY estado_do_atuador.tempo DESC LIMIT 4)
 
