@@ -88,6 +88,19 @@ UPDATE sala SET id_mote=t2.id_mote
 FROM sala AS t1,(SELECT id_mote FROM mote) AS t2
 WHERE id_mote = t2.id_mote
 
+/* EX 3 Já é alguma coisa */
+SET search_path TO dba34;
+
+UPDATE sala
+SET id_mote= CASE
+    WHEN sala.nome_da_sala='armazenamento' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'armazenamento')
+    WHEN sala.nome_da_sala='frigorifico' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'frigorifico')
+    END
+
+
+
+
+
 
 
 
