@@ -41,9 +41,24 @@ SET id_mote= CASE
     WHEN sala.nome_da_sala='armazenamento' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'armazenamento')
     WHEN sala.nome_da_sala='frigorifico' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'frigorifico')
     END
-RETURNING sala.nome_da_sala AS Sensor, sala.id_mote AS Cell
+RETURNING
+ (SELECT sensor.tipo FROM sensor WHERE sensor.id_mote=s.id_mote) AS Sensor,
+ (SELECT sala.nome_da_sala FROM sala WHERE sala.id_mote=s.id_mote) AS Cell
 
-
+(SELECT sensor.tipo AS Sensor, sala.nome_da_sala AS Cell
+ FROM sensor
+ JOIN sala ON sala.id_mote=sensor.id_mote
+)
+/*
+SET search_path TO dba34;
+UPDATE sala AS s
+SET id_mote= CASE
+    WHEN s.nome_da_sala='armazenamento' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'armazenamento')
+    WHEN s.nome_da_sala='frigorifico' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'frigorifico')
+    END
+RETURNING
+ (SELECT sensor.tipo FROM sensor WHERE sensor.id_mote=s.id_mote) AS Sensor,
+ (SELECT sala.nome_da_sala FROM sala WHERE sala.id_mote=s.id_mote) AS Cell*/
 
 /************************************ EX 4 VERSAO FINAL ************************************/
 SET search_path TO dba34;
