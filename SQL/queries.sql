@@ -8,6 +8,7 @@ SET search_path TO dba34;
 
 /************************************ EX 1 VERSAO FINAL ************************************/
 SET search_path TO dba34;
+
 SELECT tempo AS timestamp, valor_medido AS measurement
 FROM valor_do_sensor
  JOIN sensor ON sensor.id_sensor=valor_do_sensor.id_sensor
@@ -16,7 +17,6 @@ WHERE sensor.tipo = 'temperatura' AND sala.nome_da_sala = 'armazenamento' AND te
 
 
 /************************************ EX 2 VERSAO FINAL ************************************/
-
 SET search_path TO dba34;
 
 SELECT atuador.nome AS Actuator, sala.nome_da_sala AS Cell, t1.estado AS State
@@ -35,8 +35,8 @@ FROM (
 
 
 /************************************ EX 3 VERSAO FINAL ************************************/
-
 SET search_path TO dba34;
+
 UPDATE sala
 SET id_mote= CASE
     WHEN sala.nome_da_sala='armazenamento' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'armazenamento')
@@ -45,30 +45,6 @@ SET id_mote= CASE
 RETURNING  sala.id_mote AS Sensor,  sala.nome_da_sala AS Cell
 
 
-/*SET search_path TO dba34;
-UPDATE sala
-SET id_mote= CASE
-    WHEN sala.nome_da_sala='armazenamento' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'armazenamento')
-    WHEN sala.nome_da_sala='frigorifico' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'frigorifico')
-    END
-RETURNING
- (SELECT sensor.tipo FROM sensor WHERE sensor.id_mote=s.id_mote) AS Sensor,
- (SELECT sala.nome_da_sala FROM sala WHERE sala.id_mote=s.id_mote) AS Cell
-
-(SELECT sensor.tipo AS Sensor, sala.nome_da_sala AS Cell
- FROM sensor
- JOIN sala ON sala.id_mote=sensor.id_mote
-)*/
-/*
-SET search_path TO dba34;
-UPDATE sala AS s
-SET id_mote= CASE
-    WHEN s.nome_da_sala='armazenamento' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'armazenamento')
-    WHEN s.nome_da_sala='frigorifico' THEN (SELECT id_mote FROM sala WHERE sala.nome_da_sala<>'frigorifico')
-    END
-RETURNING
- (SELECT sensor.tipo FROM sensor WHERE sensor.id_mote=s.id_mote) AS Sensor,
- (SELECT sala.nome_da_sala FROM sala WHERE sala.id_mote=s.id_mote) AS Cell*/
 
 /************************************ EX 4 VERSAO FINAL ************************************/
 SET search_path TO dba34;
@@ -91,9 +67,8 @@ RETURNING   r.id_regras AS Rule,
 
 
 /************************************ EX 5 VERSAO FINAL ************************************/
-
-
 SET search_path TO dba34;
+
 SELECT tempo AS timestamp, ((220*3600/1000)*valor_do_sensor.valor_medido) AS Energy
 FROM valor_do_sensor
  JOIN sensor ON sensor.id_sensor=valor_do_sensor.id_sensor 
