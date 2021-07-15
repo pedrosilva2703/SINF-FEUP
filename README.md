@@ -4,5 +4,4 @@ industry4_0-sinf2021_a34 created by GitHub Classroom
 
 ### Database Server Access [PostgreSQL](https://db.fe.up.pt/phppgadmin/)
 
-### Web Interface
-https://paginas.fe.up.pt/~up201806526/
+### Web Interface: https://paginas.fe.up.pt/~up201806526/
