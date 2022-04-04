@@ -1,5 +1,6 @@
 # industry4_0-sinf2021_a34
 industry4_0-sinf2021_a34 created by GitHub Classroom
+[Course Page](https://sigarra.up.pt/feup/pt/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=461259)  
 
 ### Group Members
  * Pedro Silva    (up201806526@edu.fe.up.pt)
