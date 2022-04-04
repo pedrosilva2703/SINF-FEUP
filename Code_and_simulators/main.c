@@ -198,7 +198,7 @@ int main(){
     //******************** Set up Database connection *******************************//
 
 
-    dbconn = "host = 'db.fe.up.pt' dbname = 'sinf2021a34' user = 'sinf2021a34' password = 'DuOHMMxK'";
+    dbconn = "host = 'db.fe.up.pt' dbname = 'sinf2021a34' user = '---' password = '---'";
     conn = PQconnectdb(dbconn);
 
     
